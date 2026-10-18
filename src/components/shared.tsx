@@ -61,9 +61,8 @@ export function Logo({
 const links = [
   ["Home", "/"],
   ["About", "/about"],
-  ["Activities", "/activities"],
   ["Events", "/events"],
-  ["Resources", "/resources"],
+  ["Learning", "/learning"],
 ];
 export function Header() {
   const path = usePathname();
@@ -169,8 +168,8 @@ export function Footer() {
             title="Discover"
             items={[
               ["Our story", "/about"],
-              ["What we do", "/activities"],
-              ["Resources", "/resources"],
+              ["Practice labs", "/learning#labs"],
+              ["Learning", "/learning"],
               ["Gallery & news", "/gallery"],
             ]}
           />
@@ -470,5 +469,3 @@ export function NetworkArt({ small = false }: { small?: boolean }) {
     </div>
   );
 }
-
-

@@ -2,6 +2,7 @@ import Link from "next/link";
 import { PublicShell, PageIntro, Reveal } from "./shared";
 import { published } from "@/lib/server/content";
 import { type ClubContent, formatDate } from "@/lib/models";
+import { LearningHub } from "./learning-hub";
 import { Gallery } from "./gallery";
 import { notFound } from "next/navigation";
 import { clubPhotos } from "@/lib/photos";
@@ -62,10 +63,10 @@ export async function PublicPage({ page, id }: { page: string; id?: string }) {
       "Events",
       "Upcoming sessions and past club events.",
     ],
-    resources: [
-      "KEEP LEARNING",
-      "Resources",
-      "Cybersecurity resources shared by club administrators.",
+    learning: [
+      "EXPLORE. PRACTISE. GROW.",
+      "Learning",
+      "Small challenges. Practical skills. A place to build your confidence.",
     ],
     gallery: [
       "THE CLUB, IN FOCUS",
@@ -128,6 +129,18 @@ export async function PublicPage({ page, id }: { page: string; id?: string }) {
           </article>
         ) : page === "contact" ? (
           <ContactForm />
+        ) : page === "learning" ? (
+          <>
+            <LearningHub />
+            {all.some((item) => item.kind === "resource") && (
+              <section className="section">
+                <h2>From the club</h2>
+                <ContentCards
+                  items={all.filter((item) => item.kind === "resource")}
+                />
+              </section>
+            )}
+          </>
         ) : page === "privacy" ? (
           <article className="article-body">
             <h2>Membership information</h2>

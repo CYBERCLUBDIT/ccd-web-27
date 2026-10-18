@@ -14,7 +14,9 @@ export async function POST(request: Request) {
     await checkOrigin();
     const body = await requestJson(request);
     if (body.action === "contact") {
-      if (!(await rateLimit("contact", 30)))
+      const ip =
+        request.headers.get("x-forwarded-for")?.split(",")[0].trim() || "local";
+      if (!(await rateLimit(`contact:${ip}`, 30)))
         return NextResponse.json(
           { error: "Please try again later." },
           { status: 429 },

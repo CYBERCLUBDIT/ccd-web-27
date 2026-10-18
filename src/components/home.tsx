@@ -83,13 +83,13 @@ export async function HomePage() {
                     icon: BookOpen,
                     title: "Build your foundations",
                     text: "Practical guides. A place to start.",
-                    href: "/resources",
+                    href: "/learning",
                   },
                   {
                     icon: ShieldCheck,
                     title: "Think like a defender",
                     text: "Real curiosity. Responsible practice.",
-                    href: "/activities",
+                    href: "/learning",
                   },
                   {
                     icon: Users,

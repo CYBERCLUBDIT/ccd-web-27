@@ -38,6 +38,12 @@ To add the real summit event, news story, and nine gallery entries, run `node --
 
 Public counters use the larger of recorded activity and owner-supplied historical totals. The schema currently initializes historical figures of 300+ members, 5 events, 5 workshops, 100+ CTFs, and 500+ attendance. These are aggregate figures in `reported_totals`; they do not create individual membership, event, or attendance records. A developer should verify these figures with the owner before a new deployment. Event-derived workshop and CTF counts use the event categories `workshop` and `ctf`.
 
+## Learning and contact pages
+
+`/learning` replaces the old Activities and Resources pages; those URLs redirect permanently to Learning. The catalogue contains six explicitly labelled demo labs in `src/lib/learning-labs.ts`. Search, topic and difficulty filters, exercise previews, and answer feedback run in the browser. The examples use fictional evidence; they do not start virtual machines, scan targets, award membership credit, or save completion to an account. Published resource entries remain available in the “From the club” section below the demo catalogue.
+
+The contact page uses the existing `/api/club` contact action. Messages persist in PostgreSQL for administrators to read; responses are handled by the club team. Contact rate limits apply per client address, so one sender cannot exhaust a single shared contact quota for everyone.
+
 ## Technology
 
 - Next.js 16 App Router and React 19.

@@ -15,8 +15,8 @@ const activities = [
     title: "Workshops & study groups",
     text: "Learn network security, digital forensics, and incident response with other club members.",
     topics: "Guided sessions · Shared resources",
-    href: "/resources",
-    link: "Browse resources",
+    href: "/learning",
+    link: "Explore learning",
     photo: "/images/summit/7046.webp",
     alt: "A group learning together in a classroom",
   },
@@ -25,8 +25,8 @@ const activities = [
     title: "CTFs & practical challenges",
     text: "Work through security puzzles and investigate digital evidence in authorised practice environments.",
     topics: "Team challenges · Hands-on practice",
-    href: "/activities",
-    link: "Explore activities",
+    href: "/learning",
+    link: "Explore practice labs",
     photo: "/images/summit/7095.webp",
     alt: "People working at computer security workstations",
   },
@@ -92,7 +92,7 @@ export function ActivityShowcase() {
         </AnimatePresence>
         <figcaption>
           <span>{selected.title}</span>
-          <small>Illustrative photography</small>
+          <small>Cybersecurity Summit · 2026</small>
         </figcaption>
       </figure>
     </div>

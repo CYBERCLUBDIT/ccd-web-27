@@ -51,6 +51,44 @@ test("PostgreSQL membership, authentication, approval and publishing", async (t)
         assert.ok(!text.includes("Sample story"));
       }
     });
+    await t.test(
+      "learning replaces old navigation and contact messages persist",
+      async () => {
+        for (const path of ["/activities", "/resources"]) {
+          const oldPage = await fetch(origin + path, { redirect: "manual" });
+          assert.equal(oldPage.status, 308);
+          assert.equal(oldPage.headers.get("location"), "/learning");
+        }
+        const learning = await (await fetch(origin + "/learning")).text();
+        assert.match(learning, /Spot the phishing email/);
+        assert.match(learning, /Demo labs/);
+        assert.ok(!learning.includes('href="/activities"'));
+        assert.ok(!learning.includes('href="/resources"'));
+        const invalid = await post("/api/club", {
+          action: "contact",
+          name: "Test member",
+          email,
+          message: "short",
+        });
+        assert.equal(invalid.status, 400);
+        const saved = await post("/api/club", {
+          action: "contact",
+          name: "Test member",
+          email,
+          message: "Temporary integration contact message.",
+        });
+        assert.equal(saved.status, 200);
+        assert.equal(
+          (
+            await db.query(
+              "SELECT count(*)::int AS count FROM messages WHERE email=$1",
+              [email],
+            )
+          ).rows[0].count,
+          1,
+        );
+      },
+    );
     await t.test("anonymous admin access denied", async () => {
       assert.equal((await fetch(origin + "/api/admin")).status, 403);
       const r = await fetch(origin + "/admin", { redirect: "manual" });
@@ -380,6 +418,7 @@ test("PostgreSQL membership, authentication, approval and publishing", async (t)
       );
     });
   } finally {
+    await db.query("DELETE FROM messages WHERE email=$1", [email]);
     if (contentId)
       await db.query("DELETE FROM content WHERE id=$1", [contentId]);
     await db.query(
@@ -394,7 +433,12 @@ test("PostgreSQL membership, authentication, approval and publishing", async (t)
       ["%" + email, "%" + adminEmail],
     );
     await db.query("DELETE FROM login_limits WHERE key=ANY($1::text[])", [
-      [`login:${testIp}`, `register:${testIp}`, `reset:${testIp}`],
+      [
+        `login:${testIp}`,
+        `register:${testIp}`,
+        `reset:${testIp}`,
+        `contact:${testIp}`,
+      ],
     ]);
     await db.end();
   }

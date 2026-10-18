@@ -3,7 +3,7 @@ cyberclubdit.org {
     reverse_proxy cyberclubdit-web:3000
     header {
         X-Content-Type-Options nosniff
-        Referrer-Policy strict-origin-when-cross-origin
+        Referrer-Policy no-referrer
         X-Frame-Options DENY
         -Server
     }

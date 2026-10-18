@@ -28,3 +28,18 @@ Point the domain's root A record to `93.127.142.206`, with `www` as a CNAME to `
 Verify the actual HTTPS domain, public content API, sign-in, and administrator authorization after DNS changes. The loopback health check alone does not confirm public HTTPS is live. Do not run the integration suite against production.
 
 For updates, back up the database, pull reviewed commits, rebuild, and recreate the container. Keep a copy of the previous build for rollback. Build while serving the same `.next` directory can interrupt requests; stop this container during an in-place build or move to separate release directories before requiring zero-downtime releases. Docker's restart policy brings the service back after host restarts. Restoring the saved Caddy configuration and reloading removes the new routes if rollback is needed.
+
+
+## Release directories (current production)
+
+Production runs from a separate directory under `/var/www/ccd-web/.local/releases/`, built before container replacement. `/var/www/ccd-web/.local/active-release.txt` records the active directory and is the source of truth for the serving release. The parent checkout is retained for recovery and is not the serving source directory.
+
+Use the active release when reading logs or restarting; simply pulling into the parent checkout does not update the serving release:
+
+```sh
+active_release=$(cat /var/www/ccd-web/.local/active-release.txt)
+docker compose -p ccd-web -f "$active_release/deploy/vps.compose.yml" logs --tail=100
+docker compose -p ccd-web -f "$active_release/deploy/vps.compose.yml" up -d
+```
+
+For the next release, archive the reviewed commit into a new directory under `.local/releases/`, copy the private environment file and CA into that release, install locked dependencies, and build there. Check a temporary container on a separate loopback port before recreating only the `ccd-web` project's `web` service. Keep the previous directory and its compose file for rollback. The summit seed inserts nine photos, one past event, and one news story; it preserves existing records on reruns. All other hosted projects keep their own compose projects and containers.

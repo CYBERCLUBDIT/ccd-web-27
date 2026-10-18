@@ -1,4 +1,4 @@
-import { notFound, redirect } from "next/navigation";
+import { notFound, redirect, permanentRedirect } from "next/navigation";
 import type { Metadata } from "next";
 import { PublicPage } from "@/components/public-pages";
 import { AuthPage } from "@/components/auth";
@@ -20,6 +20,8 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 export default async function Page({ params }: Props) {
   const { slug } = await params;
   const [first, second] = slug;
+  if (["activities", "resources"].includes(first) && slug.length === 1)
+    permanentRedirect("/learning");
   if (first === "complete-profile" && slug.length === 1) {
     const user = await currentUser();
     if (!user || !supabaseAuthEnabled()) redirect("/sign-in");
@@ -70,8 +72,7 @@ export default async function Page({ params }: Props) {
   if (
     [
       "about",
-      "activities",
-      "resources",
+      "learning",
       "gallery",
       "contact",
       "privacy",
