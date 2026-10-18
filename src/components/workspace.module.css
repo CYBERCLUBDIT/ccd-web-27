@@ -1,0 +1,377 @@
+.workspace {
+  --portal-bg: #f3f6fb;
+  --portal-line: #e1e8f2;
+}
+.workspace :global(.portal-sidebar) {
+  padding: 28px 18px 18px;
+}
+.workspace :global(.portal-sidebar nav) {
+  display: block;
+}
+.workspace :global(.portal-sidebar nav button) {
+  width: 100%;
+  border-radius: 10px;
+  min-height: 44px;
+  margin: 3px 0;
+  text-align: left;
+}
+.navGroup {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.13em;
+  text-transform: uppercase;
+  color: var(--portal-muted);
+  margin: 22px 14px 8px;
+}
+.workspace :global(.portal-sidebar nav button.is-active) {
+  box-shadow: inset 3px 0 0 #3563f5;
+}
+.workspace :global(.portal-topbar) {
+  background: var(--portal-panel);
+}
+.workspace :global(.portal-main) {
+  max-width: 1500px;
+  width: 100%;
+  margin-inline: auto;
+  padding: 32px clamp(18px, 3vw, 48px);
+}
+.workspace :global(.portal-page-heading h1) {
+  font-size: clamp(25px, 2.5vw, 34px);
+  letter-spacing: -0.04em;
+}
+.workspace :global(.portal-summary) {
+  border-radius: 18px;
+  box-shadow: 0 4px 18px #0a254006;
+  padding: 24px;
+}
+.workspace :global(.portal-panel) {
+  border-radius: 18px;
+  box-shadow: 0 4px 18px #0a254006;
+  overflow: hidden;
+}
+.workspace :global(.portal-panel-heading) {
+  padding-bottom: 20px;
+}
+.workspace :global(.portal-quick-actions button) {
+  border-radius: 12px;
+  margin-block: 5px;
+  padding: 17px;
+  background: var(--portal-bg);
+}
+.workspace :global(.portal-event-grid) {
+  gap: 22px;
+}
+.workspace :global(.student-event-card) {
+  border-radius: 18px;
+  overflow: hidden;
+  padding: 22px;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 12px;
+}
+.workspace :global(.student-event-cover) {
+  width: calc(100% + 44px);
+  max-width: none;
+  margin: -22px -22px 8px;
+  height: 210px;
+  object-fit: cover;
+}
+.workspace :global(.student-event-card h3) {
+  font-size: 20px;
+  letter-spacing: -0.025em;
+}
+.workspace :global(.student-event-card p) {
+  color: var(--portal-muted);
+  margin: 0;
+  line-height: 1.65;
+}
+.home {
+  display: grid;
+  gap: 24px;
+}
+.welcome {
+  position: relative;
+  display: grid;
+  grid-template-columns: 1.3fr 1fr;
+  align-items: center;
+  overflow: hidden;
+  background: #0a1c36;
+  color: #fff;
+  border: 1px solid #203958;
+  padding: 34px;
+  border-radius: 22px;
+}
+.welcome h2 {
+  font-size: clamp(28px, 3.5vw, 44px);
+  line-height: 1.08;
+  letter-spacing: -0.045em;
+  margin: 13px 0;
+  font-weight: 650;
+}
+.welcome p {
+  color: #b9cbe4;
+  max-width: 390px;
+  line-height: 1.7;
+  margin-bottom: 22px;
+  font-size: 14px;
+}
+.welcome img {
+  width: 100%;
+  height: 260px;
+  object-fit: contain;
+  opacity: 0.8;
+}
+.eyebrow {
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--portal-muted);
+}
+.welcome .eyebrow {
+  color: #a9c9ff;
+}
+.sectionTitle {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+  margin-top: 10px;
+}
+.sectionTitle h2 {
+  font-size: 22px;
+  letter-spacing: -0.035em;
+  font-weight: 650;
+  margin-top: 5px;
+}
+.sectionTitle button,
+.recapLink {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  color: var(--portal-blue);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.labGrid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 18px;
+}
+.labCard {
+  text-align: left;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  padding: 24px;
+  background: var(--portal-panel);
+  border: 1px solid var(--portal-line);
+  border-radius: 16px;
+  gap: 14px;
+  cursor: pointer;
+  transition:
+    border-color 0.2s,
+    transform 0.2s;
+}
+.labCard:hover {
+  border-color: #7598fb;
+  transform: translateY(-3px);
+}
+.labCard > svg {
+  color: #5079f1;
+}
+.labCard h3 {
+  font-size: 17px;
+  font-weight: 650;
+  letter-spacing: -0.025em;
+}
+.labCard p {
+  color: var(--portal-muted);
+  font-size: 13px;
+  line-height: 1.7;
+}
+.labCard > span:last-child {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+  color: var(--portal-blue);
+  font-size: 12px;
+  font-weight: 600;
+  margin-top: auto;
+}
+.contentGrid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 20px;
+}
+.contentCard {
+  overflow: hidden;
+  background: var(--portal-panel);
+  border: 1px solid var(--portal-line);
+  border-radius: 18px;
+}
+.contentCard > img {
+  width: 100%;
+  height: 200px;
+  object-fit: cover;
+}
+.contentCard > div {
+  padding: 23px;
+}
+.contentCard h3 {
+  font-size: 19px;
+  font-weight: 650;
+  line-height: 1.4;
+  margin: 9px 0;
+}
+.contentCard p {
+  color: var(--portal-muted);
+  font-size: 14px;
+  line-height: 1.75;
+  white-space: pre-line;
+}
+.contentCard a {
+  display: inline-flex;
+  gap: 7px;
+  align-items: center;
+  color: var(--portal-blue);
+  margin-top: 18px;
+  font-size: 13px;
+  font-weight: 600;
+}
+.eventBadge {
+  font-size: 11px;
+  border: 1px solid var(--portal-line);
+  border-radius: 30px;
+  padding: 4px 10px;
+  color: var(--portal-muted);
+}
+.filterLabel {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  font-size: 12px;
+  color: var(--portal-muted);
+}
+.filterLabel select {
+  padding: 8px 12px;
+  border: 1px solid var(--portal-line);
+  border-radius: 8px;
+  background: var(--portal-panel);
+  color: var(--portal-text);
+}
+.loading {
+  padding: 18px;
+  background: var(--portal-panel);
+  border: 1px solid var(--portal-line);
+  border-radius: 12px;
+  margin-bottom: 20px;
+}
+.workspace button:focus-visible,
+.workspace a:focus-visible {
+  outline: 3px solid #7ca1ff;
+  outline-offset: 3px;
+}
+:global(.dark) .workspace {
+  --portal-bg: #081220;
+  --portal-line: #213047;
+}
+@media (max-width: 1100px) {
+  .labGrid {
+    grid-template-columns: 1fr;
+  }
+  .labCard {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    column-gap: 18px;
+  }
+  .labCard > :not(svg) {
+    grid-column: 2;
+  }
+  .welcome {
+    grid-template-columns: 1.4fr 1fr;
+  }
+}
+@media (max-width: 640px) {
+  .welcome {
+    padding: 25px;
+    grid-template-columns: 1fr;
+  }
+  .welcome img {
+    display: none;
+  }
+  .contentGrid {
+    grid-template-columns: 1fr;
+  }
+  .sectionTitle h2 {
+    font-size: 19px;
+  }
+  .workspace :global(.portal-main) {
+    padding: 24px 16px;
+  }
+  .workspace :global(.portal-status) {
+    font-size: 10px;
+  }
+  .filterLabel {
+    flex-wrap: wrap;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .labCard {
+    transition: none;
+  }
+}
+.workspace {
+  --portal-muted: var(--portal-sub);
+  --portal-blue: #3563f5;
+}
+.workspace :global(.portal-sidebar nav) {
+  overflow-y: auto;
+  min-height: 0;
+}
+.workspace :global(.portal-sidebar nav button) {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px;
+  font-size: 12px;
+  color: var(--portal-sub);
+  cursor: pointer;
+  border: 1px solid transparent;
+}
+.workspace :global(.portal-sidebar nav button.is-active) {
+  background: linear-gradient(100deg, #1b4578, #102744);
+  color: #e7f2ff;
+  border-color: #31567f;
+}
+.workspace :global(.portal-sidebar nav button:hover) {
+  background: #234c7740;
+  color: #eef5ff;
+}
+.workspace
+  :global(.portal-sidebar nav button > svg:last-child:not(:first-child)) {
+  margin-left: auto;
+}
+.workspace :global(.portal-sidebar-bottom) {
+  padding-top: 18px;
+}
+.filterLabel select {
+  color: var(--portal-ink);
+}
+.workspace .navGroup {
+  margin: 13px 12px 6px;
+  font-size: 9px;
+  letter-spacing: 0.14em;
+}
+.workspace :global(.portal-brand) {
+  padding-bottom: 18px;
+}
+.workspace :global(.portal-role) {
+  margin-bottom: 8px;
+}
+.workspace :global(.portal-sidebar nav) {
+  scrollbar-width: thin;
+  scrollbar-color: #294560 transparent;
+}

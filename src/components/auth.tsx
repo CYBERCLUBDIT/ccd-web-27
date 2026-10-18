@@ -37,14 +37,14 @@ export function AuthPage({
       data-managed-auth={managedAuth}
     >
       <aside
-        className={`auth-brand ${styles.brandCanvas} ${page === "join" ? styles.registrationBrand : ""}`}
+        className={`auth-brand ${styles.brandCanvas} ${styles.registrationBrand}`}
       >
         <img
           className="auth-panel-photo"
           src={
             page === "join"
               ? "/images/summit/7095.webp"
-              : "/illustrations/security-grid.svg"
+              : "/images/summit/6956.webp"
           }
           alt=""
           width={1600}
@@ -122,6 +122,7 @@ function AccountForm({
         <Link href="/contact">Contact the club</Link>
       </>
     );
+  if (page === "application-approved") return <ApplicationSent approved />;
   if (page === "membership-status") return <ApplicationSent />;
   if (joining && done)
     return (

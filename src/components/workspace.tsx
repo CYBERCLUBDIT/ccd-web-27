@@ -8,6 +8,9 @@ import { Label } from "./ui/label";
 import { Textarea } from "./ui/textarea";
 import { Logo } from "./shared";
 import {
+  BookOpen,
+  Images,
+  Newspaper,
   LayoutDashboard,
   Users,
   CalendarDays,
@@ -25,6 +28,10 @@ import {
   ChevronRight,
 } from "lucide-react";
 import { type ClubUser, type ClubContent, formatDate } from "@/lib/models";
+import { LearningHub } from "./learning-hub";
+import { Gallery } from "./gallery";
+import { learningLabs } from "@/lib/learning-labs";
+import styles from "./workspace.module.css";
 type Applicant = ClubUser & { created_at: string };
 type Entry = {
   event_id: string;
@@ -62,23 +69,57 @@ export function Workspace({
   }, [mobile]);
   const nav = admin
     ? [
-        { id: "overview", label: "Overview", icon: LayoutDashboard },
-        { id: "members", label: "Members", icon: Users },
-        { id: "content", label: "Content", icon: FileText },
-        { id: "attendance", label: "Attendance", icon: ClipboardCheck },
-        { id: "messages", label: "Messages", icon: MessageSquare },
+        {
+          id: "overview",
+          label: "Overview",
+          icon: LayoutDashboard,
+          group: "Workspace",
+        },
+        { id: "members", label: "Members", icon: Users, group: "People" },
+        {
+          id: "attendance",
+          label: "Attendance",
+          icon: ClipboardCheck,
+          group: "People",
+        },
+        {
+          id: "content",
+          label: "Content",
+          icon: FileText,
+          group: "Publishing",
+        },
+        {
+          id: "messages",
+          label: "Messages",
+          icon: MessageSquare,
+          group: "Communication",
+        },
       ]
     : [
-        { id: "overview", label: "Overview", icon: LayoutDashboard },
-        { id: "events", label: "Events", icon: CalendarDays },
-        { id: "challenges", label: "CTF activities", icon: Flag },
-        { id: "profile", label: "My profile", icon: UserRound },
+        {
+          id: "overview",
+          label: "Overview",
+          icon: LayoutDashboard,
+          group: "Workspace",
+        },
+        { id: "events", label: "Events", icon: CalendarDays, group: "Explore" },
+        { id: "challenges", label: "Challenges", icon: Flag, group: "Explore" },
+        { id: "learning", label: "Learning", icon: BookOpen, group: "Explore" },
+        { id: "news", label: "Club news", icon: Newspaper, group: "Community" },
+        { id: "gallery", label: "Gallery", icon: Images, group: "Community" },
+        {
+          id: "community",
+          label: "Our community",
+          icon: Users,
+          group: "Community",
+        },
+        {
+          id: "profile",
+          label: "My profile",
+          icon: UserRound,
+          group: "Account",
+        },
       ];
-  const upcoming = content.filter(
-    (c) =>
-      c.kind === "event" && c.event_date && new Date(c.event_date) > new Date(),
-  );
-  const challenges = content.filter((c) => c.kind === "challenge");
   const filtered = content.filter((c) =>
     (c.title + " " + c.description)
       .toLowerCase()
@@ -95,7 +136,7 @@ export function Workspace({
   };
   return (
     <div
-      className={`portal-shell${admin ? " admin-portal" : " student-portal"}`}
+      className={`${styles.workspace} portal-shell${admin ? " admin-portal" : " student-portal"}`}
     >
       {mobile && (
         <button
@@ -121,21 +162,25 @@ export function Workspace({
           {admin ? "ADMIN WORKSPACE" : "MEMBER WORKSPACE"}
         </span>
         <nav aria-label="Portal navigation">
-          {nav.map((n) => (
-            <button
-              key={n.id}
-              className={active === n.id ? "is-active" : ""}
-              aria-current={active === n.id ? "page" : undefined}
-              onClick={() => {
-                setActive(n.id);
-                setSearch("");
-                setMobile(false);
-              }}
-            >
-              <n.icon size={18} />
-              {n.label}
-              {active === n.id && <ChevronRight size={14} />}
-            </button>
+          {nav.map((n, index) => (
+            <div key={n.id}>
+              {(index === 0 || nav[index - 1].group !== n.group) && (
+                <p className={styles.navGroup}>{n.group}</p>
+              )}
+              <button
+                className={active === n.id ? "is-active" : ""}
+                aria-current={active === n.id ? "page" : undefined}
+                onClick={() => {
+                  setActive(n.id);
+                  setSearch("");
+                  setMobile(false);
+                }}
+              >
+                <n.icon size={18} />
+                {n.label}
+                {active === n.id && <ChevronRight size={14} />}
+              </button>
+            </div>
           ))}
         </nav>
         <div className="portal-sidebar-bottom">
@@ -201,7 +246,7 @@ export function Workspace({
                   </h1>
                   <p>
                     {active === "overview"
-                      ? "Your membership, upcoming sessions, and next challenge."
+                      ? "Learn something new. Find your next event. Stay connected."
                       : "Your Cyber Club DIT workspace."}
                   </p>
                 </div>
@@ -211,24 +256,49 @@ export function Workspace({
                 </span>
               </div>
               {active === "overview" && (
-                <StudentOverview
+                <StudentHome
+                  content={filtered}
                   user={user}
-                  upcoming={upcoming}
-                  challenges={challenges}
-                  search={search}
                   setActive={setActive}
                 />
               )}
+              {active === "learning" && (
+                <>
+                  <LearningHub />
+                  <ContentCollection
+                    items={filtered.filter((c) => c.kind === "resource")}
+                    empty="New reading material will appear here."
+                  />
+                </>
+              )}
+              {active === "news" && (
+                <ContentCollection
+                  items={filtered.filter((c) => c.kind === "news")}
+                  empty="No matching club news."
+                />
+              )}
+              {active === "gallery" && (
+                <Gallery items={filtered.filter((c) => c.kind === "gallery")} />
+              )}
+              {active === "community" && (
+                <ContentCollection
+                  items={filtered.filter((c) =>
+                    ["leader", "testimonial"].includes(c.kind),
+                  )}
+                  empty="Community profiles and stories will appear here."
+                />
+              )}
+
               {active === "events" && (
                 <div className="portal-event-grid">
                   {filtered
-                    .filter((c) => upcoming.some((e) => e.id === c.id))
+                    .filter((c) => c.kind === "event")
                     .map((c) => (
                       <PortalEvent key={c.id} item={c} />
                     ))}
-                  {!filtered.some((c) =>
-                    upcoming.some((e) => e.id === c.id),
-                  ) && <PortalEmpty text="No matching upcoming events." />}
+                  {!filtered.some((c) => c.kind === "event") && (
+                    <PortalEmpty text="No matching events." />
+                  )}
                 </div>
               )}
               {active === "challenges" && (
@@ -290,25 +360,42 @@ export function Workspace({
     </div>
   );
 }
-function StudentOverview({
+function StudentHome({
+  content,
   user,
-  upcoming,
-  challenges,
-  search,
   setActive,
 }: {
+  content: ClubContent[];
   user: ClubUser;
-  upcoming: ClubContent[];
-  challenges: ClubContent[];
-  search: string;
   setActive: (value: string) => void;
 }) {
-  const matches = (item: ClubContent) =>
-    (item.title + " " + item.description)
-      .toLowerCase()
-      .includes(search.toLowerCase());
+  const events = content.filter((c) => c.kind === "event");
+  const news = content.filter((c) => c.kind === "news");
   return (
-    <>
+    <div className={styles.home}>
+      <section className={styles.welcome}>
+        <div>
+          <span className={styles.eyebrow}>YOUR CLUB. YOUR NEXT STEP.</span>
+          <h2>
+            Build skills.
+            <br />
+            Make connections.
+          </h2>
+          <p>
+            Practical labs, club events, and ideas worth sharing — all in your
+            workspace.
+          </p>
+          <Button onClick={() => setActive("learning")}>
+            Explore Learning <ArrowUpRight size={16} />
+          </Button>
+        </div>
+        <img
+          src="/illustrations/security-grid.svg"
+          alt=""
+          width={360}
+          height={260}
+        />
+      </section>
       <div className="portal-summary-grid student-summary-row">
         <SummaryCard
           label="Membership"
@@ -317,148 +404,122 @@ function StudentOverview({
           icon={ShieldCheck}
         />
         <SummaryCard
-          label="Upcoming events"
-          value={String(upcoming.length)}
-          detail="Sessions on the calendar"
+          label="Club events"
+          value={String(events.length)}
+          detail="Upcoming sessions and past highlights"
           icon={CalendarDays}
         />
         <SummaryCard
-          label="CTF activities"
-          value={String(challenges.length)}
-          detail="Available to explore"
-          icon={Flag}
+          label="Practice labs"
+          value={String(learningLabs.length)}
+          detail="Short, interactive learning demos"
+          icon={BookOpen}
         />
       </div>
-      <div className="student-content-grid">
+      <div className={styles.sectionTitle}>
         <div>
-          <section className="portal-panel student-events-panel">
-            <div className="portal-panel-heading">
-              <div>
-                <span className="student-section-kicker">
-                  YOUR NEXT SESSION
-                </span>
-                <h2>Upcoming events</h2>
-              </div>
-              <button onClick={() => setActive("events")}>
-                View all <ArrowUpRight size={14} />
-              </button>
-            </div>
-            {upcoming
-              .filter(matches)
-              .slice(0, 3)
-              .map((item) => (
-                <div className="student-agenda-row" key={item.id}>
-                  <div className="student-date-tile">
-                    <strong>
-                      {item.event_date
-                        ? new Date(item.event_date).toLocaleDateString(
-                            "en-GB",
-                            {
-                              day: "2-digit",
-                              timeZone: "Africa/Dar_es_Salaam",
-                            },
-                          )
-                        : "—"}
-                    </strong>
-                    <small>
-                      {item.event_date
-                        ? new Date(item.event_date).toLocaleDateString(
-                            "en-GB",
-                            {
-                              month: "short",
-                              timeZone: "Africa/Dar_es_Salaam",
-                            },
-                          )
-                        : ""}
-                    </small>
-                  </div>
-                  <div>
-                    <strong>{item.title}</strong>
-                    <p>{item.location || "Location to be confirmed"}</p>
-                  </div>
-                  <button
-                    aria-label={"View " + item.title}
-                    onClick={() => setActive("events")}
-                  >
-                    <ArrowUpRight size={19} />
-                  </button>
-                </div>
-              ))}
-            {!upcoming.filter(matches).length && (
-              <div className="student-friendly-empty">
-                <span>
-                  <CalendarDays size={27} />
-                </span>
-                <h3>
-                  {search
-                    ? "No matching events"
-                    : "No upcoming events yet."}
-                </h3>
-                <p>
-                  {search
-                    ? "Try another search."
-                    : "Published workshops and club events will appear here."}
-                </p>
-              </div>
-            )}
-          </section>
-          <section className="portal-panel student-challenges-panel">
-            <div className="portal-panel-heading">
-              <div>
-                <span className="student-section-kicker">
-                  PUT YOUR SKILLS TO WORK
-                </span>
-                <h2>CTF activities</h2>
-              </div>
-              <button onClick={() => setActive("challenges")}>
-                View all <ArrowUpRight size={14} />
-              </button>
-            </div>
-            {challenges
-              .filter(matches)
-              .slice(0, 2)
-              .map((item) => (
-                <div className="student-challenge-row" key={item.id}>
-                  <span>
-                    <Flag size={20} />
-                  </span>
-                  <div>
-                    <h3>{item.title}</h3>
-                    <p>{item.description}</p>
-                  </div>
-                  {item.external_url && (
-                    <a
-                      href={item.external_url}
-                      target="_blank"
-                      rel="noreferrer"
-                      aria-label={"Open " + item.title}
-                    >
-                      <ArrowUpRight size={18} />
-                    </a>
-                  )}
-                </div>
-              ))}
-            {!challenges.filter(matches).length && (
-              <div className="student-ctf-empty">
-                <Flag size={24} />
-                <div>
-                  <h3>
-                    {search
-                      ? "No matching challenges"
-                      : "No CTF activities yet."}
-                  </h3>
-                  <p>
-                    {search
-                      ? "Try another search."
-                      : "New CTF activities will be listed here when published."}
-                  </p>
-                </div>
-              </div>
-            )}
-          </section>
+          <span className={styles.eyebrow}>LEARN BY DOING</span>
+          <h2>Your next small win</h2>
         </div>
+        <button onClick={() => setActive("learning")}>
+          All labs <ArrowUpRight size={15} />
+        </button>
       </div>
-    </>
+      <div className={styles.labGrid}>
+        {learningLabs.slice(0, 3).map((lab) => (
+          <button
+            key={lab.id}
+            className={styles.labCard}
+            onClick={() => setActive("learning")}
+          >
+            <BookOpen size={21} />
+            <span className={styles.eyebrow}>PRACTICE LAB · DEMO</span>
+            <h3>{lab.title}</h3>
+            <p>{lab.description}</p>
+            <span>
+              Start learning <ArrowUpRight size={15} />
+            </span>
+          </button>
+        ))}
+      </div>
+      <div className={styles.sectionTitle}>
+        <div>
+          <span className={styles.eyebrow}>IN THE CLUB</span>
+          <h2>Events & highlights</h2>
+        </div>
+        <button onClick={() => setActive("events")}>
+          All events <ArrowUpRight size={15} />
+        </button>
+      </div>
+      <div className="portal-event-grid">
+        {events.slice(0, 2).map((item) => (
+          <PortalEvent key={item.id} item={item} />
+        ))}
+        {!events.length && <PortalEmpty text="Club events will appear here." />}
+      </div>
+      <div className={styles.sectionTitle}>
+        <h2>Latest from the club</h2>
+        <button onClick={() => setActive("news")}>
+          All news <ArrowUpRight size={15} />
+        </button>
+      </div>
+      <ContentCollection
+        items={news.slice(0, 2)}
+        empty="Club news will appear here."
+      />
+      <div className={styles.sectionTitle}>
+        <h2>Life at Cyber Club DIT</h2>
+        <button onClick={() => setActive("gallery")}>
+          Open gallery <ArrowUpRight size={15} />
+        </button>
+      </div>
+      <Gallery compact items={content.filter((c) => c.kind === "gallery")} />
+    </div>
+  );
+}
+function ContentCollection({
+  items,
+  empty,
+}: {
+  items: ClubContent[];
+  empty: string;
+}) {
+  return (
+    <div className={styles.contentGrid}>
+      {items.map((item) => (
+        <article className={styles.contentCard} key={item.id}>
+          {item.image_url && (
+            <img
+              src={item.image_url}
+              alt={item.title}
+              loading="lazy"
+              width={640}
+              height={400}
+            />
+          )}
+          <div>
+            <span className={styles.eyebrow}>
+              {item.category ||
+                (item.kind === "resource" ? "Learning material" : item.kind)}
+            </span>
+            <h3>{item.title}</h3>
+            <p>{item.description}</p>
+            {item.kind === "news" ? (
+              <Link href={"/news/" + item.id}>
+                Read story <ArrowUpRight size={15} />
+              </Link>
+            ) : item.external_url ? (
+              <a href={item.external_url} target="_blank" rel="noreferrer">
+                Explore <ArrowUpRight size={15} />
+              </a>
+            ) : (
+              item.body && <p>{item.body}</p>
+            )}
+          </div>
+        </article>
+      ))}
+      {!items.length && <PortalEmpty text={empty} />}
+    </div>
   );
 }
 function SummaryCard({
@@ -498,6 +559,8 @@ function PortalEmpty({ text }: { text: string }) {
   );
 }
 function PortalEvent({ item }: { item: ClubContent }) {
+  const upcoming =
+    !!item.event_date && new Date(item.event_date).getTime() > Date.now();
   const [message, setMessage] = useState(""),
     [busy, setBusy] = useState(false);
   return (
@@ -515,27 +578,36 @@ function PortalEvent({ item }: { item: ClubContent }) {
         {item.event_date && formatDate(item.event_date)} · {item.location}
       </p>
       <p>{item.description}</p>
-      <Button
-        disabled={busy || message === "Registered"}
-        onClick={async () => {
-          setBusy(true);
-          try {
-            const r = await fetch("/api/club", {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({ action: "book", eventId: item.id }),
-            });
-            const d = await r.json();
-            setMessage(r.ok ? "Registered" : d.error);
-          } catch {
-            setMessage("Unable to register. Try again.");
-          } finally {
-            setBusy(false);
-          }
-        }}
-      >
-        Register for event
-      </Button>
+      <span className={styles.eventBadge}>
+        {upcoming ? "Upcoming" : "Past event"}
+      </span>
+      {upcoming ? (
+        <Button
+          disabled={busy || message === "Registered"}
+          onClick={async () => {
+            setBusy(true);
+            try {
+              const r = await fetch("/api/club", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ action: "book", eventId: item.id }),
+              });
+              const d = await r.json();
+              setMessage(r.ok ? "Registered" : d.error);
+            } catch {
+              setMessage("Unable to register. Try again.");
+            } finally {
+              setBusy(false);
+            }
+          }}
+        >
+          Register for event
+        </Button>
+      ) : (
+        <Link className={styles.recapLink} href={"/events/" + item.id}>
+          View event recap <ArrowUpRight size={15} />
+        </Link>
+      )}
       {message && <p role="status">{message}</p>}
     </section>
   );
@@ -557,7 +629,9 @@ function AdminPortal({
     >([]),
     [error, setError] = useState(""),
     [notice, setNotice] = useState(""),
-    [busy, setBusy] = useState(false);
+    [busy, setBusy] = useState(false),
+    [loading, setLoading] = useState(true),
+    [memberStatus, setMemberStatus] = useState("all");
   async function load() {
     const r = await fetch("/api/admin", { cache: "no-store" });
     const d = await r.json();
@@ -568,7 +642,9 @@ function AdminPortal({
     setMessages(d.messages);
   }
   useEffect(() => {
-    load().catch((e) => setError(e.message));
+    load()
+      .catch((e) => setError(e.message))
+      .finally(() => setLoading(false));
   }, []);
   async function save(data: Record<string, unknown>) {
     setBusy(true);
@@ -615,6 +691,11 @@ function AdminPortal({
           Refresh
         </Button>
       </div>
+      {loading && (
+        <p role="status" className={styles.loading}>
+          Loading club activity…
+        </p>
+      )}
       {tab === "overview" && (
         <div className="admin-overview">
           <div className="portal-summary-grid">
@@ -728,22 +809,37 @@ function AdminPortal({
         <section className="portal-panel">
           <div className="portal-panel-heading">
             <h2>Member applications</h2>
-            <span>{members.length} total</span>
+            <label className={styles.filterLabel}>
+              Status
+              <select
+                value={memberStatus}
+                onChange={(e) => setMemberStatus(e.target.value)}
+              >
+                <option value="all">All applications</option>
+                <option value="pending">Pending</option>
+                <option value="approved">Approved</option>
+                <option value="rejected">Rejected</option>
+              </select>
+            </label>
           </div>
           <ApplicantTable
-            members={members.filter((m) =>
-              (
-                m.name +
-                " " +
-                m.email +
-                " " +
-                m.registration_number +
-                " " +
-                m.status
+            members={members
+              .filter(
+                (m) => memberStatus === "all" || m.status === memberStatus,
               )
-                .toLowerCase()
-                .includes(search.toLowerCase()),
-            )}
+              .filter((m) =>
+                (
+                  m.name +
+                  " " +
+                  m.email +
+                  " " +
+                  m.registration_number +
+                  " " +
+                  m.status
+                )
+                  .toLowerCase()
+                  .includes(search.toLowerCase()),
+              )}
             busy={busy}
             save={save}
           />

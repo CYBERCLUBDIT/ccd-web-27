@@ -37,7 +37,7 @@ export default async function Page({ params }: Props) {
   if (first === "complete-profile" && slug.length === 1) {
     const user = await currentUser();
     if (!user || !supabaseAuthEnabled()) redirect("/sign-in");
-    if (user.registration_number || user.role === "admin")
+    if (user.onboarding_completed_at || user.role === "admin")
       redirect("/membership-status");
     return <AuthPage page="complete-profile" managedAuth />;
   }
@@ -48,16 +48,29 @@ export default async function Page({ params }: Props) {
   ) {
     const user = await currentUser();
     if (!user) redirect("/sign-in");
-    if (!user.registration_number && user.role !== "admin")
+    if (!user.onboarding_completed_at && user.role !== "admin")
       redirect("/complete-profile");
     if (user.status === "rejected")
       return <AuthPage page="membership-rejected" managedAuth />;
     if (user.status === "approved")
       redirect(user.role === "admin" ? "/admin" : "/member");
   }
+  if (first === "application-sent" && slug.length === 1) {
+    const user = await currentUser();
+    if (!user) redirect("/sign-in");
+    if (!user.onboarding_completed_at) redirect("/complete-profile");
+    if (user.status !== "approved") redirect("/membership-status");
+    return <AuthPage page="application-approved" managedAuth />;
+  }
   if (["member", "admin", "leader"].includes(first)) {
     const user = await currentUser();
     if (!user) redirect(first === "admin" ? "/admin/sign-in" : "/sign-in");
+    if (
+      supabaseAuthEnabled() &&
+      user.role !== "admin" &&
+      !user.onboarding_completed_at
+    )
+      redirect("/complete-profile");
     if (user.status !== "approved") redirect("/membership-status");
     const admin = first !== "member";
     if (admin && user.role !== "admin") redirect("/member");

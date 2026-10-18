@@ -19,6 +19,7 @@ export type ClubUser = {
   phone: string;
   course: string;
 
+  onboarding_completed_at?: string | null;
   role: string;
   status: string;
 };

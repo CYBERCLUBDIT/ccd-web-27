@@ -149,9 +149,9 @@ export async function verifiedClubUser(identity: User) {
 export function memberDestination(user: {
   role: string;
   status: string;
-  registration_number?: string | null;
+  onboarding_completed_at?: string | null;
 }) {
-  if (user.role !== "admin" && !user.registration_number)
+  if (user.role !== "admin" && !user.onboarding_completed_at)
     return "/complete-profile";
   if (user.status !== "approved") return "/membership-status";
   return user.role === "admin" ? "/admin" : "/member";

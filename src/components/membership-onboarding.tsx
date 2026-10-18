@@ -29,7 +29,7 @@ export function OnboardingSteps({ step }: { step: 1 | 2 | 3 }) {
   );
 }
 
-export function ApplicationSent() {
+export function ApplicationSent({ approved = false }: { approved?: boolean }) {
   return (
     <>
       <OnboardingSteps step={3} />
@@ -38,13 +38,19 @@ export function ApplicationSent() {
       </div>
       <h1>Congratulations!</h1>
       <p className="auth-description">
-        Your application is sent. Please wait for approval.
+        {approved
+          ? "Your details are saved. Your membership is already approved."
+          : "Your application is sent. Please wait for approval."}
       </p>
       <p className="auth-description">
-        Once approved, sign in to open your club account.
+        {approved
+          ? "You can now open your student dashboard."
+          : "Once approved, sign in to open your club account."}
       </p>
       <Button asChild>
-        <Link href="/">Back to website</Link>
+        <Link href={approved ? "/member" : "/"}>
+          {approved ? "Open dashboard" : "Back to website"}
+        </Link>
       </Button>
     </>
   );

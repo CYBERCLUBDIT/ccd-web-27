@@ -183,7 +183,7 @@ test(
       );
     try {
       await db.query(
-        "ALTER TABLE users ADD COLUMN IF NOT EXISTS supabase_user_id uuid UNIQUE",
+        "ALTER TABLE users ADD COLUMN IF NOT EXISTS supabase_user_id uuid UNIQUE; ALTER TABLE users ADD COLUMN IF NOT EXISTS onboarding_completed_at timestamptz",
       );
       app = spawn(
         process.execPath,
@@ -269,6 +269,34 @@ test(
         },
       );
       await t.test(
+        "existing student fields and approval cannot skip first onboarding",
+        async () => {
+          await db.query(
+            "UPDATE users SET registration_number=$1,status='approved' WHERE email=$2",
+            ["OLD-" + suffix, email],
+          );
+          const login = await post({ action: "login", email, password });
+          assert.equal(login.status, 200);
+          assert.equal((await login.json()).destination, "/complete-profile");
+          const member = await get("/member");
+          if (member.status === 307)
+            assert.match(member.headers.get("location"), /complete-profile/);
+          else {
+            const html = await member.text();
+            assert.match(html, /NEXT_REDIRECT[^<]*complete-profile/);
+            assert.doesNotMatch(html, /Welcome back,/);
+          }
+          const booking = await post(
+            { action: "book", eventId: randomUUID() },
+            "/api/club",
+          );
+          assert.equal(booking.status, 401);
+          await db.query("UPDATE users SET status='pending' WHERE email=$1", [
+            email,
+          ]);
+        },
+      );
+      await t.test(
         "account form precedes three-step onboarding for verified email users",
         async () => {
           const form = await (await get("/join")).text();
@@ -292,6 +320,21 @@ test(
             course: "Integration",
           });
           assert.equal(r.status, 200);
+          const completed = await db.query(
+            "SELECT onboarding_completed_at,status,role FROM users WHERE email=$1",
+            [email],
+          );
+          assert.ok(completed.rows[0].onboarding_completed_at);
+          assert.equal(completed.rows[0].status, "pending");
+          assert.equal(completed.rows[0].role, "member");
+          const repeat = await post({
+            action: "complete_profile",
+            name: "Repeat profile",
+            registrationNumber: "TEST-" + suffix,
+            phone: "+255700000000",
+            course: "Integration",
+          });
+          assert.equal(repeat.status, 400);
           const status = await (await get("/membership-status")).text();
           assert.match(status, /Congratulations!/);
           assert.match(status, /Please wait for approval/);

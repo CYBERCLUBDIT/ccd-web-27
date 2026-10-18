@@ -26,3 +26,6 @@ INSERT INTO reported_totals(metric,value,lower_bound,source) VALUES
 DO $$ BEGIN IF EXISTS(SELECT 1 FROM information_schema.columns WHERE table_name='users' AND column_name='program') AND NOT EXISTS(SELECT 1 FROM information_schema.columns WHERE table_name='users' AND column_name='course') THEN ALTER TABLE users RENAME COLUMN program TO course; END IF; END $$;
 
 ALTER TABLE users ADD COLUMN IF NOT EXISTS supabase_user_id uuid UNIQUE;
+
+-- Completion is recorded only after verified students submit both onboarding forms.
+ALTER TABLE public.users ADD COLUMN IF NOT EXISTS onboarding_completed_at timestamptz;

@@ -2,6 +2,7 @@ import { requestJson } from "@/lib/server/request";
 import { NextResponse } from "next/server";
 import { db } from "@/lib/server/db";
 import { currentUser, checkOrigin, rateLimit } from "@/lib/server/auth";
+import { supabaseAuthEnabled } from "@/lib/server/supabase";
 import { published, statistics } from "@/lib/server/content";
 export async function GET() {
   return NextResponse.json(
@@ -42,7 +43,13 @@ export async function POST(request: Request) {
       return NextResponse.json({ ok: true });
     }
     const user = await currentUser();
-    if (!user || user.status !== "approved")
+    if (
+      !user ||
+      user.status !== "approved" ||
+      (supabaseAuthEnabled() &&
+        user.role !== "admin" &&
+        !user.onboarding_completed_at)
+    )
       return NextResponse.json(
         { error: "Please sign in with an approved account." },
         { status: 401 },

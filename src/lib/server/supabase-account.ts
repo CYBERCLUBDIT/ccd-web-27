@@ -21,14 +21,14 @@ export async function supabaseAccount(body: Record<string, unknown>) {
         { status: 401 },
       );
     const details = studentDetails(body);
-    if (user.role === "admin" || user.registration_number) {
+    if (user.role === "admin" || user.onboarding_completed_at) {
       return NextResponse.json(
         { error: "Your profile is already complete." },
         { status: 400 },
       );
     }
     await db.query(
-      "UPDATE users SET name=$1,registration_number=$2,phone=$3,course=$4 WHERE id=$5 AND registration_number IS NULL",
+      "UPDATE users SET name=$1,registration_number=$2,phone=$3,course=$4,onboarding_completed_at=now() WHERE id=$5 AND onboarding_completed_at IS NULL",
       [
         details.name,
         details.registration,
@@ -37,7 +37,10 @@ export async function supabaseAccount(body: Record<string, unknown>) {
         user.id,
       ],
     );
-    return NextResponse.json({ destination: "/membership-status" });
+    return NextResponse.json({
+      destination:
+        user.status === "approved" ? "/application-sent" : "/membership-status",
+    });
   }
   const client = await identityClient();
   const email = String(body.email ?? "")

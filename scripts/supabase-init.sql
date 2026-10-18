@@ -39,3 +39,6 @@ ALTER TABLE public.audit_log ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.reported_totals ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.users ADD COLUMN IF NOT EXISTS supabase_user_id uuid UNIQUE;
 COMMIT;
+
+-- Completion is recorded only after verified students submit both onboarding forms.
+ALTER TABLE public.users ADD COLUMN IF NOT EXISTS onboarding_completed_at timestamptz;

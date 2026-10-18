@@ -29,7 +29,7 @@ export async function currentUser() {
   const token = (await cookies()).get("ccd_session")?.value;
   if (!token) return null;
   const { rows } = await db.query(
-    "SELECT u.id,u.name,u.email,u.registration_number,u.phone,u.course,u.role,u.status FROM sessions s JOIN users u ON u.id=s.user_id WHERE s.token_hash=$1 AND s.expires_at>now() AND (NOT $2::boolean OR u.supabase_user_id IS NOT NULL)",
+    "SELECT u.id,u.name,u.email,u.registration_number,u.phone,u.course,u.role,u.status,u.onboarding_completed_at FROM sessions s JOIN users u ON u.id=s.user_id WHERE s.token_hash=$1 AND s.expires_at>now() AND (NOT $2::boolean OR u.supabase_user_id IS NOT NULL)",
     [digest(token), supabaseAuthEnabled()],
   );
   return rows[0] ?? null;
