@@ -54,11 +54,11 @@ export function AuthPage({
           <Logo dark />
           <div className="auth-brand-copy">
             <h2>
-              A safer future.
+              Learn. Connect.
               <br />
-              Starts with <em>you.</em>
+              Grow <em>together.</em>
             </h2>
-            <p>A few small steps. A whole community to grow with.</p>
+            <p>Your cyber community.</p>
           </div>
         </div>
       </aside>

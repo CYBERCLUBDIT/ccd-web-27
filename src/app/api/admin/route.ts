@@ -3,6 +3,29 @@ import { NextResponse } from "next/server";
 import { supabaseAuthEnabled } from "@/lib/server/supabase";
 import { db } from "@/lib/server/db";
 import { checkOrigin, currentUser } from "@/lib/server/auth";
+async function auditedChange(
+  query: string,
+  values: unknown[],
+  actor: string,
+  action: string,
+) {
+  const client = await db.connect();
+  try {
+    await client.query("BEGIN");
+    const result = await client.query(query, values);
+    if (!result.rows[0]) throw new Error("Record not found.");
+    await client.query(
+      "INSERT INTO audit_log(actor_id,action,target_id) VALUES($1,$2,$3)",
+      [actor, action, result.rows[0].id],
+    );
+    await client.query("COMMIT");
+  } catch (error) {
+    await client.query("ROLLBACK");
+    throw error;
+  } finally {
+    client.release();
+  }
+}
 export async function GET() {
   const user = await currentUser();
   if (user?.role !== "admin" || user.status !== "approved")
@@ -104,8 +127,8 @@ export async function POST(request: Request) {
           !Number.isFinite(Date.parse(String(body.event_date))))
       )
         throw new Error("Choose a valid event date.");
-      await db.query(
-        "INSERT INTO content(kind,title,description,body,category,image_url,external_url,event_date,location,published,created_by) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11)",
+      await auditedChange(
+        "INSERT INTO content(kind,title,description,body,category,image_url,external_url,event_date,location,published,created_by) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11) RETURNING id",
         [
           kind,
           title,
@@ -119,16 +142,22 @@ export async function POST(request: Request) {
           body.published === true,
           user.id,
         ],
+        user.id,
+        "content.create",
       );
     } else if (body.action === "publish") {
-      await db.query("UPDATE content SET published=$1 WHERE id=$2", [
-        body.published === true,
-        body.id,
-      ]);
+      await auditedChange(
+        "UPDATE content SET published=$1 WHERE id=$2 RETURNING id",
+        [body.published === true, body.id],
+        user.id,
+        body.published === true ? "content.publish" : "content.unpublish",
+      );
     } else if (body.action === "attendance") {
-      await db.query(
-        "UPDATE attendance SET attended=$1 WHERE event_id=$2 AND user_id=$3",
+      await auditedChange(
+        "UPDATE attendance SET attended=$1 WHERE event_id=$2 AND user_id=$3 RETURNING user_id AS id",
         [body.attended === true, body.eventId, body.userId],
+        user.id,
+        body.attended === true ? "attendance.present" : "attendance.absent",
       );
     } else throw new Error("Unknown action");
     return NextResponse.json({ ok: true });

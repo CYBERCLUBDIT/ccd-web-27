@@ -8,6 +8,8 @@ import { Label } from "./ui/label";
 import { Textarea } from "./ui/textarea";
 import { Logo } from "./shared";
 import {
+  BarChart3,
+  ScrollText,
   BookOpen,
   Newspaper,
   LayoutDashboard,
@@ -30,6 +32,7 @@ import { type ClubUser, type ClubContent, formatDate } from "@/lib/models";
 import { LearningHub } from "./learning-hub";
 import { learningLabs } from "@/lib/learning-labs";
 import styles from "./workspace.module.css";
+import { AdminInsights } from "./admin-insights";
 type Applicant = ClubUser & { created_at: string };
 type Entry = {
   event_id: string;
@@ -43,13 +46,15 @@ export function Workspace({
   user,
   content,
   admin = false,
+  initialTab = "overview",
 }: {
   user: ClubUser;
   content: ClubContent[];
   admin?: boolean;
+  initialTab?: string;
 }) {
   const router = useRouter();
-  const [active, setActive] = useState("overview"),
+  const [active, setActive] = useState(initialTab),
     [search, setSearch] = useState(""),
     [mobile, setMobile] = useState(false);
   useEffect(() => {
@@ -65,12 +70,34 @@ export function Workspace({
       window.removeEventListener("keydown", onKey);
     };
   }, [mobile]);
+  useEffect(() => {
+    setActive(initialTab);
+  }, [initialTab]);
+  const navigate = (value: string) => {
+    setActive(value);
+    if (admin)
+      router.replace(value === "overview" ? "/admin" : "/admin/" + value, {
+        scroll: false,
+      });
+  };
   const nav = admin
     ? [
         {
           id: "overview",
           label: "Overview",
           icon: LayoutDashboard,
+          group: "Workspace",
+        },
+        {
+          id: "analytics",
+          label: "Analytics",
+          icon: BarChart3,
+          group: "Workspace",
+        },
+        {
+          id: "audit",
+          label: "Audit logs",
+          icon: ScrollText,
           group: "Workspace",
         },
         { id: "members", label: "Members", icon: Users, group: "People" },
@@ -162,7 +189,7 @@ export function Workspace({
                 className={active === n.id ? "is-active" : ""}
                 aria-current={active === n.id ? "page" : undefined}
                 onClick={() => {
-                  setActive(n.id);
+                  navigate(n.id);
                   setSearch("");
                   setMobile(false);
                 }}
@@ -209,15 +236,17 @@ export function Workspace({
             <strong>{nav.find((n) => n.id === active)?.label}</strong>
           </div>
           <div>
-            <label className="portal-search">
-              <Search size={15} />
-              <input
-                aria-label="Search current view"
-                placeholder="Search this view…"
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-              />
-            </label>
+            {active !== "analytics" && (
+              <label className="portal-search">
+                <Search size={15} />
+                <input
+                  aria-label="Search current view"
+                  placeholder="Search this view…"
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                />
+              </label>
+            )}
             <span className="portal-top-avatar" title={user.name}>
               {user.name.slice(0, 1).toUpperCase()}
             </span>
@@ -225,7 +254,15 @@ export function Workspace({
         </header>
         <main id="main" className="portal-main">
           {admin ? (
-            <AdminPortal tab={active} setTab={setActive} search={search} />
+            active === "analytics" || active === "audit" ? (
+              <AdminInsights
+                key={active + ":" + search}
+                view={active}
+                search={search}
+              />
+            ) : (
+              <AdminPortal tab={active} setTab={navigate} search={search} />
+            )
           ) : (
             <>
               <div className="portal-page-heading">

@@ -73,12 +73,27 @@ export default async function Page({ params }: Props) {
       redirect("/complete-profile");
     if (user.status !== "approved") redirect("/membership-status");
     const admin = first !== "member";
+    if (
+      slug.length > 2 ||
+      (second &&
+        (!admin ||
+          ![
+            "analytics",
+            "audit",
+            "members",
+            "content",
+            "attendance",
+            "messages",
+          ].includes(second)))
+    )
+      notFound();
     if (admin && user.role !== "admin") redirect("/member");
     return (
       <Workspace
         user={user}
         content={(await published()) as ClubContent[]}
         admin={admin}
+        initialTab={second ?? "overview"}
       />
     );
   }

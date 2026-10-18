@@ -181,7 +181,7 @@ AGENT.MD / AGENTS.md      Repository instructions for coding agents
 QA.md                    Validation notes
 ```
 
-`users` stores membership and roles; `sessions` and `password_tokens` store hashed tokens; `content` holds the seven content types; `attendance` connects users to events; `messages` stores enquiries; `login_limits` tracks rate limits; `audit_log` records membership approval/rejection actions; `reported_totals` stores historical aggregates.
+`users` stores membership and roles; `sessions` and `password_tokens` store hashed tokens; `content` holds the seven content types; `attendance` connects users to events; `messages` stores enquiries; `login_limits` tracks rate limits; `audit_log` records administrator membership, publishing, and attendance changes; `reported_totals` stores historical aggregates.
 
 The schema script uses `CREATE TABLE IF NOT EXISTS` and a targeted compatibility change. It is not a full versioned migration system: future schema changes need explicit, reviewed SQL and a backup/rollback plan.
 
@@ -254,3 +254,5 @@ Commit and push completed changes to this repository. The default branch is `mai
 No license file is currently included. Confirm permitted reuse and distribution with the repository owner.
 
 The student workspace shares published events (including past recaps), news, and Learning materials with the public website. Gallery and community profiles remain on the public website; the student overview focuses on one practice lab, the next or latest event, and a news shortcut. Its Learning section uses the same six interactive demo labs. Admin navigation groups people, publishing, and communication; application lists can be filtered by approval status. Login and registration use different summit photos in the same left-aligned panel layout.
+
+Admin reports are available at `/admin/analytics` and `/admin/audit`. Analytics uses platform records for membership, content publishing, event registration, and recorded attendance; it does not estimate website traffic or reuse historical marketing totals. Audit logs show administrator approvals/rejections, new content, publishing changes, and attendance changes. Writes and their audit entries commit together. History is read-only in the app, filtered on the server, and paginated in batches of 25. Older records may only contain membership reviews. Both reports require an approved administrator session.

@@ -333,6 +333,130 @@ test("PostgreSQL membership, authentication, approval and publishing", async (t)
       );
       assert.equal(rows[0].attended, true);
     });
+    await t.test(
+      "analytics and audit reports require administrator access",
+      async () => {
+        for (const view of ["analytics", "audit"]) {
+          const path = origin + "/api/admin/insights?view=" + view;
+          assert.equal((await fetch(path)).status, 403);
+          assert.equal(
+            (await fetch(path, { headers: { Cookie: studentCookie } })).status,
+            403,
+          );
+        }
+      },
+    );
+    await t.test(
+      "analytics reports actual registrations and attendance",
+      async () => {
+        const r = await fetch(origin + "/api/admin/insights?view=analytics", {
+          headers: { Cookie: adminCookie },
+        });
+        assert.equal(r.status, 200);
+        assert.match(r.headers.get("cache-control"), /no-store/);
+        const data = await r.json();
+        assert.equal(data.months.length, 6);
+        assert.ok(data.membership.approved >= 1);
+        const event = data.events.find((e) => e.id === contentId);
+        assert.equal(event.registrations, 1);
+        assert.equal(event.attended, 1);
+        assert.ok(data.attendance.attended <= data.attendance.registrations);
+        for (const page of ["analytics", "audit"]) {
+          const html = await (
+            await fetch(origin + "/admin/" + page, {
+              headers: { Cookie: adminCookie },
+            })
+          ).text();
+          assert.match(
+            html,
+            page === "analytics" ? /Club analytics/ : /Audit logs/,
+          );
+        }
+      },
+    );
+    await t.test(
+      "audit records mutations and pages without duplicate records",
+      async () => {
+        const fetchAudit = async (query) => {
+          const r = await fetch(
+            origin + "/api/admin/insights?view=audit&" + query,
+            { headers: { Cookie: adminCookie } },
+          );
+          assert.equal(r.status, 200);
+          return r.json();
+        };
+        const actions = await db.query(
+          "SELECT action FROM audit_log WHERE actor_id=(SELECT id FROM users WHERE email=$1)",
+          [adminEmail],
+        );
+        for (const action of [
+          "approve",
+          "content.create",
+          "attendance.present",
+        ])
+          assert.ok(actions.rows.some((row) => row.action === action));
+        await db.query(
+          "INSERT INTO audit_log(actor_id,action,target_id) SELECT u.id,'content.create',$2 FROM users u CROSS JOIN generate_series(1,27) WHERE u.email=$1",
+          [adminEmail, contentId],
+        );
+        const query =
+          "action=content.create&search=" + encodeURIComponent(suffix);
+        const first = await fetchAudit(query + "&before=");
+        assert.equal(first.items.length, 25);
+        assert.ok(first.nextCursor);
+        const second = await fetchAudit(query + "&before=" + first.nextCursor);
+        assert.ok(second.items.length > 0);
+        assert.ok(
+          second.items.every(
+            (item) => !first.items.some((other) => other.id === item.id),
+          ),
+        );
+        assert.ok(
+          first.items.every(
+            (item) =>
+              item.target_id === contentId &&
+              !Object.hasOwn(item, "password_hash"),
+          ),
+        );
+        for (const query of [
+          "before=invalid",
+          "before=9999999999999999999",
+          "action=unknown",
+        ])
+          assert.equal(
+            (
+              await fetch(origin + "/api/admin/insights?view=audit&" + query, {
+                headers: { Cookie: adminCookie },
+              })
+            ).status,
+            400,
+          );
+      },
+    );
+    await t.test(
+      "failed administrative changes do not write audit events",
+      async () => {
+        const count = async () =>
+          (
+            await db.query(
+              "SELECT count(*) FROM audit_log WHERE actor_id=(SELECT id FROM users WHERE email=$1)",
+              [adminEmail],
+            )
+          ).rows[0].count;
+        const before = await count();
+        assert.equal(
+          (
+            await post(
+              "/api/admin",
+              { action: "publish", id: randomUUID(), published: true },
+              adminCookie,
+            )
+          ).status,
+          400,
+        );
+        assert.equal(await count(), before);
+      },
+    );
     await t.test("unpublishing removes public content", async () => {
       assert.equal(
         (
