@@ -36,10 +36,16 @@ export function AuthPage({
       className={`auth-page ${styles.authLayout}${page === "join" && !managedAuth ? " registration-page" : ""}`}
       data-managed-auth={managedAuth}
     >
-      <aside className={`auth-brand ${styles.brandCanvas}`}>
+      <aside
+        className={`auth-brand ${styles.brandCanvas} ${page === "join" ? styles.registrationBrand : ""}`}
+      >
         <img
           className="auth-panel-photo"
-          src="/illustrations/security-grid.svg"
+          src={
+            page === "join"
+              ? "/images/summit/7095.webp"
+              : "/illustrations/security-grid.svg"
+          }
           alt=""
           width={1600}
           height={1067}

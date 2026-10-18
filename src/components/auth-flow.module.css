@@ -101,3 +101,67 @@
   min-height: 48px;
   gap: 0.75rem;
 }
+
+/* Keep the registration welcome in one left-aligned column over its photo. */
+.authLayout .registrationBrand {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  padding: clamp(28px, 4vw, 56px);
+}
+.authLayout .registrationBrand::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  background: linear-gradient(180deg, #04112538, #041125b8 45%, #041125ed);
+  pointer-events: none;
+}
+.authLayout .registrationBrand :global(.auth-panel-photo) {
+  z-index: 0;
+  opacity: 1;
+  object-position: 55% center;
+}
+.authLayout .registrationBrand :global(.auth-onboarding) {
+  position: relative;
+  z-index: 2;
+  width: fit-content;
+  max-width: 100%;
+  margin: auto 0;
+  align-items: flex-start;
+  text-align: left;
+}
+.authLayout .registrationBrand :global(.brand) {
+  justify-content: flex-start;
+  margin: 0 0 28px;
+}
+.authLayout .registrationBrand :global(.auth-brand-copy) {
+  text-align: left;
+  margin: 0;
+}
+.authLayout .registrationBrand h2 {
+  font-size: clamp(28px, 2.9vw, 46px);
+  line-height: 1.2;
+  letter-spacing: -0.04em;
+  margin: 0;
+  color: #f4f8ff;
+}
+.authLayout .registrationBrand h2 em {
+  color: #a6cbff;
+}
+.authLayout .registrationBrand :global(.auth-brand-copy) p {
+  max-width: clamp(168px, 17.4vw, 276px);
+  margin: 22px 0 0;
+  color: #c0d0e7;
+  font-size: 14px;
+  line-height: 1.8;
+  text-align: left;
+}
+@media (max-width: 760px) {
+  .authLayout .registrationBrand {
+    display: none;
+  }
+}
