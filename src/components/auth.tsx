@@ -8,6 +8,8 @@ import { Input } from "./ui/input";
 import { Label } from "./ui/label";
 import { ThemeToggle } from "./theme-toggle";
 import { Logo } from "./shared";
+import { ApplicationSent, MembershipOnboarding } from "./membership-onboarding";
+import styles from "./auth-flow.module.css";
 async function accountRequest(data: Record<string, unknown>) {
   const response = await fetch("/api/auth", {
     method: "POST",
@@ -18,7 +20,13 @@ async function accountRequest(data: Record<string, unknown>) {
   if (!response.ok) throw new Error(result.error);
   return result;
 }
-export function AuthPage({ page }: { page: string }) {
+export function AuthPage({
+  page,
+  managedAuth = false,
+}: {
+  page: string;
+  managedAuth?: boolean;
+}) {
   return (
     <div className={`auth-page${page === "join" ? " registration-page" : ""}`}>
       <aside className="auth-brand auth-brand-atmospheric">
@@ -50,7 +58,7 @@ export function AuthPage({ page }: { page: string }) {
         </Link>
         <div className="auth-content">
           <Suspense fallback={<p>Loading…</p>}>
-            <AccountForm page={page} />
+            <AccountForm page={page} managedAuth={managedAuth} />
           </Suspense>
         </div>
         <div className="auth-foot">
@@ -60,32 +68,63 @@ export function AuthPage({ page }: { page: string }) {
     </div>
   );
 }
-function AccountForm({ page }: { page: string }) {
+function AccountForm({
+  page,
+  managedAuth,
+}: {
+  page: string;
+  managedAuth: boolean;
+}) {
   const router = useRouter(),
     params = useSearchParams();
-  const [error, setError] = useState(""),
+  const [error, setError] = useState(
+      params.get("error") === "confirmation_failed"
+        ? "The sign-in or confirmation link expired or could not be verified. Please try again."
+        : "",
+    ),
     [busy, setBusy] = useState(false),
     [done, setDone] = useState(false);
   const joining = page === "join",
-    reset = page === "reset-password";
-  if (
-    page === "membership-status" ||
-    page === "verify-email" ||
-    (joining && done)
-  )
+    reset = page === "reset-password",
+    profile = page === "complete-profile",
+    forgot = page === "forgot-password",
+    resend = page === "verify-email";
+  if (profile) return <MembershipOnboarding />;
+  if (page === "membership-rejected")
     return (
       <>
-        <h1>Application received.</h1>
+        <h1>Application not approved.</h1>
         <p className="auth-description">
-          An administrator will review your registration. You can sign in once
-          your membership is approved.
+          Please contact the club if you need help.
+        </p>
+        <Link href="/contact">Contact the club</Link>
+      </>
+    );
+  if (page === "membership-status") return <ApplicationSent />;
+  if (joining && done)
+    return (
+      <>
+        <h1>
+          {joining && managedAuth
+            ? "Check your email."
+            : "Application received."}
+        </h1>
+        <p className="auth-description">
+          {joining && managedAuth
+            ? "Open the link in your email. Then finish your application."
+            : "An administrator will review your registration. Your club workspace becomes available once your membership is approved."}
         </p>
         <Button asChild>
           <Link href="/sign-in">Return to sign in</Link>
         </Button>
+        {managedAuth && (
+          <p>
+            <Link href="/verify-email">Resend confirmation email</Link>
+          </p>
+        )}
       </>
     );
-  if (page === "forgot-password")
+  if (forgot && !managedAuth)
     return (
       <>
         <h1>Account recovery</h1>
@@ -104,21 +143,46 @@ function AccountForm({ page }: { page: string }) {
         <Link href="/sign-in">Sign in</Link>
       </>
     );
+  if ((forgot || resend) && done)
+    return (
+      <>
+        <h1>Check your email.</h1>
+        <p>
+          If your account is eligible, an email will arrive shortly. Check your
+          spam folder too.
+        </p>
+        <Link href="/sign-in">Return to sign in</Link>
+      </>
+    );
   return (
     <>
       <h1>
-        {joining
-          ? "Join Cyber Club DIT."
-          : reset
-            ? "Set your password."
-            : "Good to see you."}
+        {profile
+          ? "Complete your membership."
+          : forgot
+            ? "Reset your password."
+            : resend
+              ? "Confirm your email."
+              : joining
+                ? "Join Cyber Club DIT."
+                : reset
+                  ? "Set your password."
+                  : "Good to see you."}
       </h1>
       <p className="auth-description">
-        {joining
-          ? "Register your student details for admin approval."
-          : reset
-            ? "Choose a unique password of at least 12 characters."
-            : "Sign in to your club account."}
+        {profile
+          ? "Add your student details so the club can review your application."
+          : forgot
+            ? "Enter your account email to receive a password reset link."
+            : resend
+              ? "Enter your account email to request a new confirmation link."
+              : joining
+                ? managedAuth
+                  ? "Create your account to get started."
+                  : "Register your student details for admin approval."
+                : reset
+                  ? "Choose a unique password of at least 12 characters."
+                  : "Sign in to your club account."}
       </p>
       {error && (
         <p role="alert" className="field-error">
@@ -126,7 +190,7 @@ function AccountForm({ page }: { page: string }) {
         </p>
       )}
       <form
-        className={`form-stack${joining ? " registration-fields" : ""}`}
+        className={`form-stack${joining && !managedAuth ? " registration-fields" : ""}`}
         onSubmit={async (e) => {
           e.preventDefault();
           setBusy(true);
@@ -143,10 +207,20 @@ function AccountForm({ page }: { page: string }) {
           try {
             const result = await accountRequest({
               ...fields,
-              action: joining ? "register" : reset ? "reset" : "login",
+              action: profile
+                ? "complete_profile"
+                : forgot
+                  ? "forgot"
+                  : resend
+                    ? "resend"
+                    : joining
+                      ? "register"
+                      : reset
+                        ? "reset"
+                        : "login",
               token: params.get("token"),
             });
-            if (joining || reset) setDone(true);
+            if (joining || reset || forgot || resend) setDone(true);
             else {
               router.push(result.destination);
               router.refresh();
@@ -158,7 +232,7 @@ function AccountForm({ page }: { page: string }) {
           }
         }}
       >
-        {joining && (
+        {joining && !managedAuth && (
           <>
             <FormField id="name" label="Full Name" autoComplete="name" />
             <FormField id="registrationNumber" label="Registration Number" />
@@ -171,7 +245,7 @@ function AccountForm({ page }: { page: string }) {
             <FormField id="course" label="Course" placeholder="e.g. od24coe" />
           </>
         )}
-        {!reset && (
+        {!reset && !profile && (
           <FormField
             id="email"
             label="Email address"
@@ -179,13 +253,17 @@ function AccountForm({ page }: { page: string }) {
             autoComplete="email"
           />
         )}
-        <FormField
-          id="password"
-          label="Password"
-          type="password"
-          autoComplete={joining || reset ? "new-password" : "current-password"}
-          minLength={12}
-        />
+        {!profile && !forgot && !resend && (
+          <FormField
+            id="password"
+            label="Password"
+            type="password"
+            autoComplete={
+              joining || reset ? "new-password" : "current-password"
+            }
+            minLength={12}
+          />
+        )}
         {(joining || reset) && (
           <FormField
             id="confirmPassword"
@@ -198,14 +276,54 @@ function AccountForm({ page }: { page: string }) {
         <Button type="submit" disabled={busy}>
           {busy
             ? "Please wait…"
-            : joining
-              ? "Submit registration"
-              : reset
-                ? "Save password"
-                : "Sign in"}
+            : profile
+              ? "Submit student details"
+              : forgot
+                ? "Send recovery email"
+                : resend
+                  ? "Resend confirmation"
+                  : joining
+                    ? managedAuth
+                      ? "Create account"
+                      : "Submit registration"
+                    : reset
+                      ? "Save password"
+                      : "Sign in"}
         </Button>
       </form>
-      {!reset && (
+      {managedAuth && (joining || page === "sign-in") && (
+        <div className={styles.providers}>
+          <p className={styles.divider}>or</p>
+          {(["google", "github"] as const).map((provider) => (
+            <Button
+              key={provider}
+              type="button"
+              variant="outline"
+              disabled={busy}
+              onClick={async () => {
+                setBusy(true);
+                setError("");
+                try {
+                  const response = await fetch("/auth/provider", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ provider }),
+                  });
+                  const result = await response.json();
+                  if (!response.ok) throw new Error(result.error);
+                  window.location.assign(result.url);
+                } catch (err) {
+                  setError((err as Error).message);
+                  setBusy(false);
+                }
+              }}
+            >
+              Continue with {provider === "google" ? "Google" : "GitHub"}
+            </Button>
+          ))}
+        </div>
+      )}
+      {!reset && !profile && !forgot && !resend && (
         <p className="auth-switch">
           {joining ? "Already registered?" : "New to the club?"}{" "}
           <Link href={joining ? "/sign-in" : "/join"}>
@@ -213,8 +331,15 @@ function AccountForm({ page }: { page: string }) {
           </Link>
         </p>
       )}
-      {!joining && !reset && (
-        <Link href="/forgot-password">Forgot password?</Link>
+      {page === "sign-in" && (
+        <>
+          <Link href="/forgot-password">Forgot password?</Link>
+          {managedAuth && (
+            <p>
+              <Link href="/verify-email">Resend confirmation email</Link>
+            </p>
+          )}
+        </>
       )}
     </>
   );

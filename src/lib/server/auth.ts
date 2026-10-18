@@ -8,6 +8,7 @@ import {
 import { promisify } from "node:util";
 import { cookies, headers } from "next/headers";
 import { db } from "./db";
+import { supabaseAuthEnabled } from "./supabase";
 const scrypt = promisify(derive);
 export function digest(value: string) {
   return createHash("sha256").update(value).digest("hex");
@@ -28,8 +29,8 @@ export async function currentUser() {
   const token = (await cookies()).get("ccd_session")?.value;
   if (!token) return null;
   const { rows } = await db.query(
-    "SELECT u.id,u.name,u.email,u.registration_number,u.phone,u.course,u.role,u.status FROM sessions s JOIN users u ON u.id=s.user_id WHERE s.token_hash=$1 AND s.expires_at>now()",
-    [digest(token)],
+    "SELECT u.id,u.name,u.email,u.registration_number,u.phone,u.course,u.role,u.status FROM sessions s JOIN users u ON u.id=s.user_id WHERE s.token_hash=$1 AND s.expires_at>now() AND (NOT $2::boolean OR u.supabase_user_id IS NOT NULL)",
+    [digest(token), supabaseAuthEnabled()],
   );
   return rows[0] ?? null;
 }
@@ -53,6 +54,7 @@ export async function endSession() {
   if (token)
     await db.query("DELETE FROM sessions WHERE token_hash=$1", [digest(token)]);
   jar.delete("ccd_session");
+  jar.delete("ccd_recovery");
 }
 export async function checkOrigin() {
   const h = await headers();

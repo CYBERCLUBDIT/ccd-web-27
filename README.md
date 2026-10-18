@@ -4,6 +4,10 @@ The Cyber Club DIT website combines a public club website, student membership po
 
 Repository: https://github.com/CYBERCLUBDIT/ccd-web-27
 
+### Managed authentication rollout
+
+Email confirmation, Google/GitHub sign-in, and three-step membership onboarding are implemented behind `SUPABASE_AUTH_ENABLED`. Follow [the authentication setup guide](docs/auth-setup.md) for Supabase, Resend, provider credentials, and existing-account migration. The legacy authentication and manual recovery instructions below remain applicable while that flag is off. Do not enable it before provider/email setup and administrator access are verified.
+
 ## For business owners and club administrators
 
 Visitors can learn about the club, browse published events and news, explore resources and gallery images, submit contact messages, and apply for membership. Approved members can sign in to the member workspace and register for upcoming published events. Administrators review applications, publish club content, read contact messages, and mark event attendance.

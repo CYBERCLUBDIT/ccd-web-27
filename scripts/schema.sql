@@ -24,3 +24,5 @@ INSERT INTO reported_totals(metric,value,lower_bound,source) VALUES
 ('members',300,true,'Club owner supplied total'),('events',5,false,'Club owner supplied total'),('workshops',5,false,'Club owner supplied total'),('ctfs',100,true,'Club owner supplied total'),('attendance',500,true,'Club owner supplied total') ON CONFLICT(metric) DO NOTHING;
 
 DO $$ BEGIN IF EXISTS(SELECT 1 FROM information_schema.columns WHERE table_name='users' AND column_name='program') AND NOT EXISTS(SELECT 1 FROM information_schema.columns WHERE table_name='users' AND column_name='course') THEN ALTER TABLE users RENAME COLUMN program TO course; END IF; END $$;
+
+ALTER TABLE users ADD COLUMN IF NOT EXISTS supabase_user_id uuid UNIQUE;

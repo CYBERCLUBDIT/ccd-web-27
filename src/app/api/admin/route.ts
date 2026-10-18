@@ -9,7 +9,7 @@ export async function GET() {
       { status: 403 },
     );
   const members = await db.query(
-    "SELECT id,name,email,registration_number,phone,course,status,created_at FROM users WHERE role='member' ORDER BY created_at DESC",
+    "SELECT id,name,email,registration_number,phone,course,status,created_at FROM users WHERE role='member' AND (supabase_user_id IS NULL OR registration_number IS NOT NULL) ORDER BY created_at DESC",
   );
   const content = await db.query(
     "SELECT * FROM content ORDER BY created_at DESC",
@@ -45,7 +45,7 @@ export async function POST(request: Request) {
       try {
         await client.query("BEGIN");
         const result = await client.query(
-          "UPDATE users SET status=$1,approved_at=CASE WHEN $1='approved' THEN now() ELSE NULL END WHERE id=$2 AND role='member' RETURNING id",
+          "UPDATE users SET status=$1,approved_at=CASE WHEN $1='approved' THEN now() ELSE NULL END WHERE id=$2 AND role='member' AND (supabase_user_id IS NULL OR registration_number IS NOT NULL) RETURNING id",
           [body.action === "approve" ? "approved" : "rejected", body.id],
         );
         if (!result.rowCount) throw new Error("Member not found.");

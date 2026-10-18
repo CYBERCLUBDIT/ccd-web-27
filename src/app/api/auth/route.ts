@@ -10,7 +10,9 @@ import {
   digest,
   rateLimit,
 } from "@/lib/server/auth";
-import { headers } from "next/headers";
+import { headers, cookies } from "next/headers";
+import { supabaseAuthEnabled } from "@/lib/server/supabase";
+import { supabaseAccount } from "@/lib/server/supabase-account";
 export async function GET() {
   return NextResponse.json(
     { user: await currentUser() },
@@ -32,17 +34,27 @@ export async function POST(request: Request) {
     const password = String(body.password ?? "");
     const ip =
       (await headers()).get("x-forwarded-for")?.split(",")[0] ?? "local";
+    const rateIdentity =
+      action === "complete_profile"
+        ? ((await currentUser())?.id ?? ip)
+        : action === "reset"
+          ? digest(
+              String(
+                body.token ??
+                  (await cookies()).get("ccd_recovery")?.value ??
+                  "",
+              ),
+            )
+          : email;
     if (
       !(await rateLimit(`${action}:${ip}`, 30)) ||
-      !(await rateLimit(
-        `${action}:${action === "reset" ? digest(String(body.token ?? "")) : email}`,
-        10,
-      ))
+      !(await rateLimit(`${action}:${rateIdentity}`, 10))
     )
       return NextResponse.json(
         { error: "Too many attempts. Try again in 15 minutes." },
         { status: 429 },
       );
+    if (supabaseAuthEnabled()) return await supabaseAccount(body);
     if (action === "reset") {
       if (password.length < 12 || password.length > 128)
         throw new Error("Use a password of 12–128 characters.");
