@@ -1,0 +1,10 @@
+import { randomBytes } from 'node:crypto';
+import { execFileSync } from 'node:child_process';
+import { writeFileSync, existsSync } from 'node:fs';
+if(existsSync('.env.local')) throw new Error('Existing .env.local found; inspect configuration before setup.');
+const password=randomBytes(32).toString('hex');
+const sql=`CREATE ROLE cyberclub_app LOGIN PASSWORD '${password}'; CREATE DATABASE cyberclubdit OWNER cyberclub_app;`;
+execFileSync('psql',['-h','localhost','-U','postgres','-d','postgres','-w','-v','ON_ERROR_STOP=1','-c',`CREATE ROLE cyberclub_app LOGIN PASSWORD '${password}'`],{stdio:'pipe'});
+execFileSync('psql',['-h','localhost','-U','postgres','-d','postgres','-w','-v','ON_ERROR_STOP=1','-c','CREATE DATABASE cyberclubdit OWNER cyberclub_app'],{stdio:'pipe'});
+writeFileSync('.env.local',`DATABASE_URL=postgresql://cyberclub_app:${password}@localhost:5432/cyberclubdit\nAPP_ORIGIN=http://127.0.0.1:3000\n`);
+console.log('Created dedicated application database and ignored local environment file.');
