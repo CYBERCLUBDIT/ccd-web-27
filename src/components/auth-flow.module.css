@@ -79,3 +79,25 @@
     font-size: 0.7rem;
   }
 }
+
+.authLayout[data-managed-auth="true"] :global(.auth-content) {
+  width: 100%;
+  max-width: 460px;
+}
+.brandCanvas {
+  background: #071324 !important;
+}
+.brandCanvas :global(.auth-panel-photo) {
+  opacity: 0.65;
+  object-fit: cover;
+}
+.authLayout :global(.auth-foot) {
+  display: flex;
+  gap: 1.5rem;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+.providers button {
+  min-height: 48px;
+  gap: 0.75rem;
+}

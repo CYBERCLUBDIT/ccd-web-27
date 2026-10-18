@@ -115,3 +115,14 @@ docker compose -p ccd-web -f deploy/vps.compose.yml up -d --force-recreate
 Test an email signup through both onboarding steps, confirmation replay rejection, Google/GitHub callbacks, pending access denial, administrator approval, login after approval, password recovery, and logout. Use controlled accounts; never run the integration suite against production.
 
 For local validation, build first and run `npm test` with the local development server running. The Supabase auth suite starts a separate local app and a mock identity service. It tests identity/approval boundaries and the user flow without sending emails or contacting real OAuth providers. Live provider sign-in and email delivery still need a final check with owner-controlled accounts after credentials are configured.
+
+
+## Production activation
+
+Managed email/password + Google authentication is enabled in the VPS environment. The SMTP sender must be an address on the verified domain (`no-reply@cyberclubdit.org`); using `resend.com` as the sender domain causes Resend to reject email even when the API key is valid. The sender display name is Cyber Club DIT.
+
+GitHub remains deferred until the OAuth app is configured. Set `SUPABASE_GITHUB_ENABLED=true` in addition to enabling the provider in Supabase; the button is disabled and the start endpoint rejects it while this flag is false.
+
+Administrators use `/admin/sign-in` and the same verified identity flow. Existing approved administrator rows are linked only after email ownership is verified, preserving their database role. No default/shared administrator password is committed. Initial credentials provisioned during deployment are delivered privately to the owner; the owner must enter the email code before administrator access is granted. Native signup does not approve ordinary members.
+
+Decorative authentication and learning artwork lives in `public/illustrations/`. Real summit photographs are reserved for relevant community/event/gallery sections instead of being reused across every page header.

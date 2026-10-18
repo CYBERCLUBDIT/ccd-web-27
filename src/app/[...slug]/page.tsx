@@ -20,6 +20,18 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 export default async function Page({ params }: Props) {
   const { slug } = await params;
   const [first, second] = slug;
+  if (first === "admin" && second === "sign-in" && slug.length === 2) {
+    const user = await currentUser();
+    if (user?.role === "admin" && user.status === "approved")
+      redirect("/admin");
+    return (
+      <AuthPage
+        page="admin-sign-in"
+        managedAuth={supabaseAuthEnabled()}
+        githubEnabled={process.env.SUPABASE_GITHUB_ENABLED === "true"}
+      />
+    );
+  }
   if (["activities", "resources"].includes(first) && slug.length === 1)
     permanentRedirect("/learning");
   if (first === "complete-profile" && slug.length === 1) {
@@ -45,7 +57,7 @@ export default async function Page({ params }: Props) {
   }
   if (["member", "admin", "leader"].includes(first)) {
     const user = await currentUser();
-    if (!user) redirect("/sign-in");
+    if (!user) redirect(first === "admin" ? "/admin/sign-in" : "/sign-in");
     if (user.status !== "approved") redirect("/membership-status");
     const admin = first !== "member";
     if (admin && user.role !== "admin") redirect("/member");
@@ -68,7 +80,13 @@ export default async function Page({ params }: Props) {
     ].includes(first) &&
     slug.length === 1
   )
-    return <AuthPage page={first} managedAuth={supabaseAuthEnabled()} />;
+    return (
+      <AuthPage
+        page={first}
+        managedAuth={supabaseAuthEnabled()}
+        githubEnabled={process.env.SUPABASE_GITHUB_ENABLED === "true"}
+      />
+    );
   if (
     [
       "about",

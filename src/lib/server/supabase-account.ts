@@ -104,14 +104,24 @@ export async function supabaseAccount(body: Record<string, unknown>) {
     const token = String(body.code ?? "").trim();
     if (!/^\d{6,10}$/.test(token))
       throw new Error("Enter the code from your email.");
-    const { data, error } = await client.auth.verifyOtp({ email, token, type: "email" });
+    const { data, error } = await client.auth.verifyOtp({
+      email,
+      token,
+      type: "email",
+    });
     if (error || !data.user)
       throw new Error("This code is incorrect or expired. Request a new code.");
     const user = await verifiedClubUser(data.user);
     if (user.status === "rejected")
-      return NextResponse.json({ error: "Your membership has not been approved." }, { status: 403 });
+      return NextResponse.json(
+        { error: "Your membership has not been approved." },
+        { status: 403 },
+      );
     await startSession(user.id);
-    return NextResponse.json({ ok: true, destination: memberDestination(user) });
+    return NextResponse.json({
+      ok: true,
+      destination: memberDestination(user),
+    });
   }
   if (password.length < 12 || password.length > 128)
     throw new Error("Use a password of 12–128 characters.");
@@ -126,7 +136,7 @@ export async function supabaseAccount(body: Record<string, unknown>) {
       return NextResponse.json(
         {
           error:
-            "Already registered? Sign in, resend confirmation, or reset your password.",
+            "Already registered? Sign in, request a new email code, or reset your password.",
         },
         { status: 409 },
       );
@@ -140,7 +150,7 @@ export async function supabaseAccount(body: Record<string, unknown>) {
     });
     if (error || !data.user)
       throw new Error(
-        "Unable to send confirmation. Please try again or contact the club.",
+        "Unable to send your email code. Please try again or contact the club.",
       );
     // Registration never grants a club session, even if confirmation was
     // accidentally disabled in Supabase. Verified login is a separate step.
@@ -161,7 +171,7 @@ export async function supabaseAccount(body: Record<string, unknown>) {
     if (error || !data.user) {
       const message =
         error?.code === "email_not_confirmed"
-          ? "Confirm your email address first. You can resend the confirmation below."
+          ? "Verify your email first. Enter the code from your email, or request a new one."
           : "Email or password is incorrect.";
       return NextResponse.json({ error: message }, { status: 401 });
     }

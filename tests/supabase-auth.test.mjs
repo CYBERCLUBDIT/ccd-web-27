@@ -83,7 +83,12 @@ test(
       if (url.pathname.endsWith("/verify")) {
         if (body.token !== undefined) {
           const key = body.email + ":" + body.token;
-          if (body.email !== email || body.token !== "123456" || body.type !== "email" || usedTokens.has(key))
+          if (
+            body.email !== email ||
+            body.token !== "123456" ||
+            body.type !== "email" ||
+            usedTokens.has(key)
+          )
             return send(403, { msg: "Expired token", code: "otp_expired" });
           usedTokens.add(key);
           const identity = identities.get(email);
@@ -196,6 +201,7 @@ test(
             NODE_ENV: "production",
             APP_ORIGIN: origin,
             SUPABASE_AUTH_ENABLED: "true",
+            SUPABASE_GITHUB_ENABLED: "true",
             SUPABASE_URL: mockOrigin,
             SUPABASE_PUBLISHABLE_KEY: "test-publishable-key",
           },
@@ -225,21 +231,33 @@ test(
           assert.equal(jar.has("ccd_session"), false);
           const login = await post({ action: "login", email, password });
           assert.equal(login.status, 401);
-          assert.match((await login.json()).error, /Confirm your email/);
+          assert.match((await login.json()).error, /Verify your email/);
         },
       );
       await t.test(
         "email OTP rejects wrong email, invalid and reused codes and grants no approval",
         async () => {
-          const wrong = await post({ action: "verify_otp", email, code: "000000" });
+          const wrong = await post({
+            action: "verify_otp",
+            email,
+            code: "000000",
+          });
           assert.equal(wrong.status, 400);
           assert.ok(!jar.has("ccd_session"));
-          const mismatch = await post({ action: "verify_otp", email: "other@example.com", code: "123456" });
+          const mismatch = await post({
+            action: "verify_otp",
+            email: "other@example.com",
+            code: "123456",
+          });
           assert.equal(mismatch.status, 400);
           const r = await post({ action: "verify_otp", email, code: "123456" });
           assert.equal(r.status, 200);
           assert.equal((await r.json()).destination, "/complete-profile");
-          const reused = await post({ action: "verify_otp", email, code: "123456" });
+          const reused = await post({
+            action: "verify_otp",
+            email,
+            code: "123456",
+          });
           assert.equal(reused.status, 400);
           assert.ok(jar.has("ccd_session"));
           assert.equal((await get("/api/admin")).status, 403);
@@ -248,7 +266,6 @@ test(
             [email],
           );
           assert.deepEqual(rows[0], { role: "member", status: "pending" });
-
         },
       );
       await t.test(

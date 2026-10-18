@@ -1,4 +1,5 @@
 "use client";
+import { Github } from "lucide-react";
 import { useState } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
@@ -24,16 +25,21 @@ async function accountRequest(data: Record<string, unknown>) {
 export function AuthPage({
   page,
   managedAuth = false,
+  githubEnabled = false,
 }: {
   page: string;
   managedAuth?: boolean;
+  githubEnabled?: boolean;
 }) {
   return (
-    <div className={`auth-page${page === "join" ? " registration-page" : ""}`}>
-      <aside className="auth-brand auth-brand-atmospheric">
+    <div
+      className={`auth-page ${styles.authLayout}${page === "join" && !managedAuth ? " registration-page" : ""}`}
+      data-managed-auth={managedAuth}
+    >
+      <aside className={`auth-brand ${styles.brandCanvas}`}>
         <img
           className="auth-panel-photo"
-          src="/images/summit/7095.webp"
+          src="/illustrations/security-grid.svg"
           alt=""
           width={1600}
           height={1067}
@@ -59,11 +65,16 @@ export function AuthPage({
         </Link>
         <div className="auth-content">
           <Suspense fallback={<p>Loading…</p>}>
-            <AccountForm page={page} managedAuth={managedAuth} />
+            <AccountForm
+              page={page}
+              managedAuth={managedAuth}
+              githubEnabled={githubEnabled}
+            />
           </Suspense>
         </div>
         <div className="auth-foot">
           <Link href="/privacy">Privacy information</Link>
+          <Link href="/admin/sign-in">Administrator sign in</Link>
         </div>
       </main>
     </div>
@@ -72,9 +83,11 @@ export function AuthPage({
 function AccountForm({
   page,
   managedAuth,
+  githubEnabled,
 }: {
   page: string;
   managedAuth: boolean;
+  githubEnabled: boolean;
 }) {
   const router = useRouter(),
     params = useSearchParams();
@@ -170,7 +183,9 @@ function AccountForm({
                 ? "Join Cyber Club DIT."
                 : reset
                   ? "Set your password."
-                  : "Good to see you."}
+                  : page === "admin-sign-in"
+                    ? "Administrator sign in."
+                    : "Good to see you."}
       </h1>
       <p className="auth-description">
         {profile
@@ -185,7 +200,9 @@ function AccountForm({
                   : "Register your student details for admin approval."
                 : reset
                   ? "Choose a unique password of at least 12 characters."
-                  : "Sign in to your club account."}
+                  : page === "admin-sign-in"
+                    ? "Use the verified email linked to your administrator account."
+                    : "Sign in to your club account."}
       </p>
       {error && (
         <p role="alert" className="field-error">
@@ -299,38 +316,62 @@ function AccountForm({
                       : "Sign in"}
         </Button>
       </form>
-      {managedAuth && (joining || page === "sign-in") && (
-        <div className={styles.providers}>
-          <p className={styles.divider}>or</p>
-          {(["google", "github"] as const).map((provider) => (
-            <Button
-              key={provider}
-              type="button"
-              variant="outline"
-              disabled={busy}
-              onClick={async () => {
-                setBusy(true);
-                setError("");
-                try {
-                  const response = await fetch("/auth/provider", {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({ provider }),
-                  });
-                  const result = await response.json();
-                  if (!response.ok) throw new Error(result.error);
-                  window.location.assign(result.url);
-                } catch (err) {
-                  setError((err as Error).message);
-                  setBusy(false);
+      {managedAuth &&
+        (joining || ["sign-in", "admin-sign-in"].includes(page)) && (
+          <div className={styles.providers}>
+            <p className={styles.divider}>or</p>
+            {(["google", "github"] as const).map((provider) => (
+              <Button
+                key={provider}
+                type="button"
+                variant="outline"
+                disabled={busy || (provider === "github" && !githubEnabled)}
+                title={
+                  provider === "github" && !githubEnabled
+                    ? "GitHub sign-in is coming soon"
+                    : undefined
                 }
-              }}
-            >
-              Continue with {provider === "google" ? "Google" : "GitHub"}
-            </Button>
-          ))}
-        </div>
-      )}
+                onClick={async () => {
+                  setBusy(true);
+                  setError("");
+                  try {
+                    const response = await fetch("/auth/provider", {
+                      method: "POST",
+                      headers: { "Content-Type": "application/json" },
+                      body: JSON.stringify({ provider }),
+                    });
+                    const result = await response.json();
+                    if (!response.ok) throw new Error(result.error);
+                    window.location.assign(result.url);
+                  } catch (err) {
+                    setError((err as Error).message);
+                    setBusy(false);
+                  }
+                }}
+              >
+                {provider === "github" ? (
+                  <Github size={18} aria-hidden="true" />
+                ) : (
+                  <svg
+                    width="18"
+                    height="18"
+                    viewBox="0 0 24 24"
+                    aria-hidden="true"
+                  >
+                    <path
+                      fill="currentColor"
+                      d="M21.6 12.2c0-.7-.1-1.4-.2-2.1H12v4h5.4a4.6 4.6 0 0 1-2 3.1v2.6h3.3c1.9-1.8 2.9-4.3 2.9-7.6ZM12 22c2.7 0 5-.9 6.7-2.3l-3.3-2.6c-.9.6-2 1-3.4 1-2.6 0-4.8-1.8-5.6-4.1H3v2.7A10 10 0 0 0 12 22ZM6.4 14a6 6 0 0 1 0-4V7.3H3a10 10 0 0 0 0 9.4L6.4 14ZM12 5.9c1.5 0 2.8.5 3.8 1.5l2.9-2.9A9.6 9.6 0 0 0 12 2a10 10 0 0 0-9 5.3L6.4 10c.8-2.3 3-4.1 5.6-4.1Z"
+                    />
+                  </svg>
+                )}
+                Continue with {provider === "google" ? "Google" : "GitHub"}
+                {provider === "github" && !githubEnabled && (
+                  <small>Coming soon</small>
+                )}
+              </Button>
+            ))}
+          </div>
+        )}
       {!reset && !profile && !forgot && !resend && (
         <p className="auth-switch">
           {joining ? "Already registered?" : "New to the club?"}{" "}
@@ -339,7 +380,7 @@ function AccountForm({
           </Link>
         </p>
       )}
-      {page === "sign-in" && (
+      {["sign-in", "admin-sign-in"].includes(page) && (
         <>
           <Link href="/forgot-password">Forgot password?</Link>
           {managedAuth && (

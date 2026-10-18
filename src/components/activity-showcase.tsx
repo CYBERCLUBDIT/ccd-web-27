@@ -17,8 +17,8 @@ const activities = [
     topics: "Guided sessions · Shared resources",
     href: "/learning",
     link: "Explore learning",
-    photo: "/images/summit/7046.webp",
-    alt: "A group learning together in a classroom",
+    photo: "/illustrations/network-lab.svg",
+    alt: "Illustration of connected network devices",
   },
   {
     id: "ctfs",
@@ -27,8 +27,8 @@ const activities = [
     topics: "Team challenges · Hands-on practice",
     href: "/learning",
     link: "Explore practice labs",
-    photo: "/images/summit/7095.webp",
-    alt: "People working at computer security workstations",
+    photo: "/illustrations/code-lab.svg",
+    alt: "Illustration of a terminal window",
   },
   {
     id: "awareness",
@@ -37,8 +37,8 @@ const activities = [
     topics: "Campus sessions · Safer digital habits",
     href: "/events",
     link: "See events",
-    photo: "/images/summit/6956.webp",
-    alt: "People exchanging ideas around a workshop table",
+    photo: "/illustrations/security-grid.svg",
+    alt: "Illustration of a security shield",
   },
 ];
 export function ActivityShowcase() {
@@ -92,7 +92,7 @@ export function ActivityShowcase() {
         </AnimatePresence>
         <figcaption>
           <span>{selected.title}</span>
-          <small>Cybersecurity Summit · 2026</small>
+          <small>Practice. Explore. Discover.</small>
         </figcaption>
       </figure>
     </div>

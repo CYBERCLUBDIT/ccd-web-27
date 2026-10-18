@@ -6,7 +6,7 @@ Repository: https://github.com/CYBERCLUBDIT/ccd-web-27
 
 ### Managed authentication rollout
 
-Email confirmation, Google/GitHub sign-in, and three-step membership onboarding are implemented behind `SUPABASE_AUTH_ENABLED`. Follow [the authentication setup guide](docs/auth-setup.md) for Supabase, Resend, provider credentials, and existing-account migration. The legacy authentication and manual recovery instructions below remain applicable while that flag is off. Do not enable it before provider/email setup and administrator access are verified.
+Production uses Supabase email/password signup with an emailed verification code, Google sign-in, and three-step membership onboarding (`SUPABASE_AUTH_ENABLED=true`). The account form asks for email, password, and confirm password before verification; student details follow verification. GitHub is deferred and its button is disabled until both Supabase credentials and `SUPABASE_GITHUB_ENABLED=true` are configured. [The authentication setup guide](docs/auth-setup.md) covers provider setup and recovery. Legacy instructions below apply only to installations with managed authentication disabled. Administrator sign-in is at `/admin/sign-in`, with the protected workspace at `/admin`. Roles and membership approval are always read from PostgreSQL.
 
 ## For business owners and club administrators
 

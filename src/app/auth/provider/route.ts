@@ -17,6 +17,11 @@ export async function POST(request: Request) {
         { error: "Unsupported provider." },
         { status: 400 },
       );
+    if (provider === "github" && process.env.SUPABASE_GITHUB_ENABLED !== "true")
+      return NextResponse.json(
+        { error: "GitHub sign-in is coming soon. Use email or Google." },
+        { status: 503 },
+      );
     if (
       !(await rateLimit(
         "oauth:" + request.headers.get("x-forwarded-for")?.split(",")[0],

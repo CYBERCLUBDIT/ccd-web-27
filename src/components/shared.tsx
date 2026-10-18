@@ -320,7 +320,6 @@ export function PageIntro({
 }) {
   return (
     <section className="page-intro">
-      <img className="page-intro-photo" src="/images/summit/6956.webp" alt="" />
       <div className="container">
         <Reveal>
           <span className="eyebrow">

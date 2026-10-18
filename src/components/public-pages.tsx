@@ -171,7 +171,7 @@ export async function PublicPage({ page, id }: { page: string; id?: string }) {
           <>
             <img
               className="article-photo"
-              src={clubPhotos.community}
+              src="/images/summit/7077.webp"
               alt="Cyber Club DIT members learning together at the Cybersecurity Summit"
               loading="lazy"
             />
