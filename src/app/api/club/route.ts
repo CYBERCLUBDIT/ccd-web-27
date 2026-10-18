@@ -1,3 +1,4 @@
+import { requestJson } from "@/lib/server/request";
 import { NextResponse } from "next/server";
 import { db } from "@/lib/server/db";
 import { currentUser, checkOrigin, rateLimit } from "@/lib/server/auth";
@@ -11,7 +12,7 @@ export async function GET() {
 export async function POST(request: Request) {
   try {
     await checkOrigin();
-    const body = await request.json();
+    const body = await requestJson(request);
     if (body.action === "contact") {
       if (!(await rateLimit("contact", 30)))
         return NextResponse.json(

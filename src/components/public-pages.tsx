@@ -2,6 +2,9 @@ import Link from "next/link";
 import { PublicShell, PageIntro, Reveal } from "./shared";
 import { published } from "@/lib/server/content";
 import { type ClubContent, formatDate } from "@/lib/models";
+import { Gallery } from "./gallery";
+import { notFound } from "next/navigation";
+import { clubPhotos } from "@/lib/photos";
 import { ContactForm } from "./contact-form";
 export function ContentCards({ items }: { items: ClubContent[] }) {
   return (
@@ -86,7 +89,12 @@ export async function PublicPage({ page, id }: { page: string; id?: string }) {
     ],
   };
   const [tag, title, description] = intro[page] ?? intro.about;
-  const detail = id ? all.find((c) => c.id === id) : null;
+  const detail = id
+    ? all.find(
+        (c) => c.id === id && c.kind === (page === "events" ? "event" : "news"),
+      )
+    : null;
+  if (id && !detail) notFound();
   return (
     <PublicShell>
       <PageIntro
@@ -110,9 +118,13 @@ export async function PublicPage({ page, id }: { page: string; id?: string }) {
               </p>
             )}
             <div style={{ whiteSpace: "pre-wrap" }}>{detail.body}</div>
-            {detail.kind === "event" && (
-              <Link href="/member">Sign in to register for this event ↗</Link>
-            )}
+            {detail.kind === "event" &&
+              (detail.event_date &&
+              new Date(detail.event_date).getTime() > Date.now() ? (
+                <Link href="/member">Sign in to register for this event ↗</Link>
+              ) : (
+                <Link href="/gallery">Explore summit photos ↗</Link>
+              ))}
           </article>
         ) : page === "contact" ? (
           <ContactForm />
@@ -121,9 +133,9 @@ export async function PublicPage({ page, id }: { page: string; id?: string }) {
             <h2>Membership information</h2>
             <p>
               We store the name, registration number, phone number, email,
-              course you submit in the club’s PostgreSQL
-              database. Administrators use these details to review membership
-              and manage events.
+              course you submit in the club’s PostgreSQL database.
+              Administrators use these details to review membership and manage
+              events.
             </p>
             <h2>Account security</h2>
             <p>
@@ -144,6 +156,12 @@ export async function PublicPage({ page, id }: { page: string; id?: string }) {
           </article>
         ) : page === "about" ? (
           <>
+            <img
+              className="article-photo"
+              src={clubPhotos.community}
+              alt="Cyber Club DIT members learning together at the Cybersecurity Summit"
+              loading="lazy"
+            />
             <section className="about-live">
               <h2>Learning to defend, together.</h2>
               <p>
@@ -208,7 +226,11 @@ export async function PublicPage({ page, id }: { page: string; id?: string }) {
               )[page];
               const items = all.filter((c) => c.kind === kind);
               return items.length ? (
-                <ContentCards items={items} />
+                page === "gallery" ? (
+                  <Gallery items={items} />
+                ) : (
+                  <ContentCards items={items} />
+                )
               ) : (
                 <p className="live-empty">
                   No {page === "gallery" ? "photos" : page} have been published

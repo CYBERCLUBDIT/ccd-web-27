@@ -1,3 +1,4 @@
+import { requestJson } from "@/lib/server/request";
 import { NextResponse } from "next/server";
 import { db } from "@/lib/server/db";
 import {
@@ -22,8 +23,22 @@ export async function GET() {
 export async function POST(request: Request) {
   try {
     await checkOrigin();
-    const body = await request.json();
+    const body = await requestJson(request);
     const action = body.action;
+    if (
+      typeof action !== "string" ||
+      ![
+        "login",
+        "logout",
+        "register",
+        "reset",
+        "forgot",
+        "resend",
+        "verify_otp",
+        "complete_profile",
+      ].includes(action)
+    )
+      throw new Error("Unknown action");
     if (action === "logout") {
       await endSession();
       return NextResponse.json({ ok: true });

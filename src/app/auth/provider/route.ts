@@ -1,3 +1,4 @@
+import { requestJson } from "@/lib/server/request";
 import { NextResponse } from "next/server";
 import { checkOrigin, rateLimit } from "@/lib/server/auth";
 import { identityClient, supabaseAuthEnabled } from "@/lib/server/supabase";
@@ -10,7 +11,7 @@ export async function POST(request: Request) {
         { error: "Social sign-in is not enabled yet." },
         { status: 503 },
       );
-    const { provider } = await request.json();
+    const { provider } = await requestJson(request);
     if (provider !== "google" && provider !== "github")
       return NextResponse.json(
         { error: "Unsupported provider." },

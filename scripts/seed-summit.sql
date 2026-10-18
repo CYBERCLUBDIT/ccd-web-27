@@ -1,0 +1,19 @@
+-- Owner-supplied summit photographs; date and credit verified in the source album.
+-- Fixed IDs make reruns safe and preserve any later administrator edits.
+INSERT INTO content(id,kind,title,description,body,category,image_url,external_url,event_date,location,published) VALUES
+('9372a0b2-3cfe-5625-a048-58fcc3e3ebab','gallery','Learning together','Students working together around a laptop.','Cybersecurity Summit · 23 May 2026. Photography by Lazaro Grapher.','Learning','/images/summit/6956.webp','',NULL,'Dar es Salaam Institute of Technology',true),
+('6fb7c54e-cfac-5350-a058-c32e08f610e5','gallery','Ideas on the big screen','A presenter working at a laptop beside a projected screen.','Cybersecurity Summit · 23 May 2026. Photography by Lazaro Grapher.','Sessions','/images/summit/7095.webp','',NULL,'Dar es Salaam Institute of Technology',true),
+('86cabd0c-a797-59fd-89cc-c97c41df2e03','gallery','Focused on discovery','Students following along on their laptops.','Cybersecurity Summit · 23 May 2026. Photography by Lazaro Grapher.','Learning','/images/summit/7046.webp','',NULL,'Dar es Salaam Institute of Technology',true),
+('6b034e33-1cff-5eb0-b011-6451a2dc74f7','gallery','A conversation worth having','Summit participants sharing ideas between sessions.','Cybersecurity Summit · 23 May 2026. Photography by Lazaro Grapher.','Community','/images/summit/7077.webp','',NULL,'Dar es Salaam Institute of Technology',true),
+('4e61d93a-070a-534e-8f67-6f1f97858357','gallery','Ready to learn','Participants gathered in a classroom for the summit.','Cybersecurity Summit · 23 May 2026. Photography by Lazaro Grapher.','Sessions','/images/summit/6996.webp','',NULL,'Dar es Salaam Institute of Technology',true),
+('8912403a-faa6-52b5-a20f-ceebad32918f','gallery','Beyond the session','A conversation in the corridor during the summit.','Cybersecurity Summit · 23 May 2026. Photography by Lazaro Grapher.','Community','/images/summit/7074.webp','',NULL,'Dar es Salaam Institute of Technology',true),
+('7bd0eaa8-513d-5fa0-97c7-88dd9b170530','event','Cybersecurity Summit 2026','A look back at a day of cybersecurity learning and community at DIT.','The Cybersecurity Summit took place on 23 May 2026. These photographs capture participants learning together, a presentation, and conversations between sessions.
+
+Explore the club gallery to see more moments from the summit. Photography by Lazaro Grapher.','Summit','/images/summit/7095.webp','','2026-05-23T00:00:00+03:00','Dar es Salaam Institute of Technology',true),
+('3d270779-b366-5c40-90fe-79638401eff1','news','Inside the Cybersecurity Summit','Shared screens, new perspectives, and conversations across the club.','Explore the Cybersecurity Summit photo collection from 23 May 2026. The gallery brings together moments of collaborative learning, sessions, and community conversations.
+
+Photography by Lazaro Grapher.','Club stories','/images/summit/6956.webp','',NULL,'Dar es Salaam Institute of Technology',true),
+('e58e5bfc-a8fc-59b8-bee2-0285c17c1544','gallery','Listening closely','Club members following a summit session.','Cybersecurity Summit · 23 May 2026. Photography by Lazaro Grapher.','Sessions','/images/summit/listening.webp','',NULL,'Dar es Salaam Institute of Technology',true),
+('a2c7b86c-05b5-5739-b268-6e1871be3187','gallery','A shared focus','Participants gathered around a laptop during the summit.','Cybersecurity Summit · 23 May 2026. Photography by Lazaro Grapher.','Learning','/images/summit/shared-focus.webp','',NULL,'Dar es Salaam Institute of Technology',true),
+('e87c7aa5-e3d4-5964-bc0e-1f8231d7c74d','gallery','Making connections','Club members sharing a conversation during the summit.','Cybersecurity Summit · 23 May 2026. Photography by Lazaro Grapher.','Community','/images/summit/connections.webp','',NULL,'Dar es Salaam Institute of Technology',true)
+ON CONFLICT(id) DO NOTHING;

@@ -17,6 +17,7 @@ import { ClubStats } from "./club-stats";
 import { ActivityShowcase } from "./activity-showcase";
 import { LandingExperience } from "./landing-motion";
 import { published, statistics } from "@/lib/server/content";
+import { Gallery } from "./gallery";
 import { ContentCards } from "./public-pages";
 import type { ClubContent } from "@/lib/models";
 import { clubPhotos, photoSet } from "@/lib/photos";
@@ -258,8 +259,8 @@ export async function HomePage() {
           {[
             {
               kind: "event",
-              tag: "WHAT’S NEXT",
-              title: "Next on the calendar.",
+              tag: "GATHER. LEARN. CONNECT.",
+              title: "Events & shared experiences.",
             },
             { kind: "news", tag: "THE JOURNAL", title: "Club news." },
             { kind: "leader", tag: "OUR PEOPLE", title: "Club leadership." },
@@ -274,7 +275,14 @@ export async function HomePage() {
             return items.length ? (
               <section className="section container" key={section.kind}>
                 <Heading tag={section.tag} title={section.title} />
-                <ContentCards items={items} />
+                {section.kind === "gallery" ? (
+                  <>
+                    <Gallery items={items} compact />
+                    <Link href="/gallery">Explore the gallery ↗</Link>
+                  </>
+                ) : (
+                  <ContentCards items={items} />
+                )}
               </section>
             ) : null;
           })}

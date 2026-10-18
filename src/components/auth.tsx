@@ -33,7 +33,7 @@ export function AuthPage({
       <aside className="auth-brand auth-brand-atmospheric">
         <img
           className="auth-panel-photo"
-          src="/images/security.jpg"
+          src="/images/summit/7095.webp"
           alt=""
           width={1600}
           height={1067}
@@ -90,7 +90,8 @@ function AccountForm({
     profile = page === "complete-profile",
     forgot = page === "forgot-password",
     resend = page === "verify-email";
-  if (resend && managedAuth) return <EmailVerification initialEmail={params.get("email") ?? ""} />;
+  if (resend && managedAuth)
+    return <EmailVerification initialEmail={params.get("email") ?? ""} />;
   if (profile) return <MembershipOnboarding />;
   if (page === "membership-rejected")
     return (
@@ -222,7 +223,11 @@ function AccountForm({
                         : "login",
               token: params.get("token"),
             });
-            if (joining && managedAuth) router.push("/verify-email?email=" + encodeURIComponent(String(fields.email)));
+            if (joining && managedAuth)
+              router.push(
+                "/verify-email?email=" +
+                  encodeURIComponent(String(fields.email)),
+              );
             else if (joining || reset || forgot || resend) setDone(true);
             else {
               router.push(result.destination);

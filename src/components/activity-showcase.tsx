@@ -17,7 +17,7 @@ const activities = [
     topics: "Guided sessions · Shared resources",
     href: "/resources",
     link: "Browse resources",
-    photo: "/images/learning.jpg",
+    photo: "/images/summit/7046.webp",
     alt: "A group learning together in a classroom",
   },
   {
@@ -27,7 +27,7 @@ const activities = [
     topics: "Team challenges · Hands-on practice",
     href: "/activities",
     link: "Explore activities",
-    photo: "/images/security.jpg",
+    photo: "/images/summit/7095.webp",
     alt: "People working at computer security workstations",
   },
   {
@@ -37,7 +37,7 @@ const activities = [
     topics: "Campus sessions · Safer digital habits",
     href: "/events",
     link: "See events",
-    photo: "/images/community.jpg",
+    photo: "/images/summit/6956.webp",
     alt: "People exchanging ideas around a workshop table",
   },
 ];

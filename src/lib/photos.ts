@@ -1,6 +1,6 @@
 export const clubPhotos = {
-  learning: "/images/learning.jpg",
-  security: "/images/security.jpg",
-  community: "/images/community.jpg",
+  learning: "/images/summit/7046.webp",
+  security: "/images/summit/7095.webp",
+  community: "/images/summit/6956.webp",
 };
 export const photoSet = Object.values(clubPhotos);

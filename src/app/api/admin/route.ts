@@ -1,3 +1,4 @@
+import { requestJson } from "@/lib/server/request";
 import { NextResponse } from "next/server";
 import { db } from "@/lib/server/db";
 import { checkOrigin, currentUser } from "@/lib/server/auth";
@@ -39,7 +40,7 @@ export async function POST(request: Request) {
         { error: "Administrator access required." },
         { status: 403 },
       );
-    const body = await request.json();
+    const body = await requestJson(request);
     if (body.action === "approve" || body.action === "reject") {
       const client = await db.connect();
       try {
@@ -93,7 +94,8 @@ export async function POST(request: Request) {
       }
       if (
         kind === "event" &&
-        (!body.event_date || !Number.isFinite(Date.parse(body.event_date)))
+        (!body.event_date ||
+          !Number.isFinite(Date.parse(String(body.event_date))))
       )
         throw new Error("Choose a valid event date.");
       await db.query(

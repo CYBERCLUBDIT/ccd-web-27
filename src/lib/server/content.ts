@@ -2,7 +2,7 @@ import "server-only";
 import { db } from "./db";
 export async function published(kind?: string) {
   const { rows } = await db.query(
-    "SELECT * FROM content WHERE published=true" +
+    "SELECT id,kind,title,description,body,category,image_url,external_url,event_date,location,published FROM content WHERE published=true" +
       (kind ? " AND kind=$1" : "") +
       " ORDER BY event_date ASC NULLS LAST,created_at DESC",
     kind ? [kind] : [],

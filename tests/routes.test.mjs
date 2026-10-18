@@ -60,6 +60,55 @@ test("PostgreSQL membership, authentication, approval and publishing", async (t)
         assert.ok(!html.includes("Review membership, publish club content"));
       } else assert.equal(r.status, 307);
     });
+    await t.test(
+      "security headers and bounded JSON protect public requests",
+      async () => {
+        const page = await fetch(origin + "/gallery");
+        assert.equal(page.headers.get("x-content-type-options"), "nosniff");
+        assert.equal(page.headers.get("x-frame-options"), "DENY");
+        assert.equal(page.headers.get("referrer-policy"), "no-referrer");
+        assert.match(
+          page.headers.get("content-security-policy"),
+          /frame-ancestors 'none'/,
+        );
+        for (const path of ["/api/auth", "/api/club"]) {
+          const oversized = await post(path, {
+            action: "contact",
+            message: "x".repeat(70000),
+          });
+          assert.equal(oversized.status, 400);
+          const malformed = await post(path, ["invalid"]);
+          assert.equal(malformed.status, 400);
+          const wrongType = await fetch(origin + path, {
+            method: "POST",
+            headers: { Origin: origin, "Content-Type": "text/plain" },
+            body: "{}",
+          });
+          assert.equal(wrongType.status, 400);
+          const streamed = await fetch(origin + path, {
+            method: "POST",
+            headers: { Origin: origin, "Content-Type": "application/json" },
+            duplex: "half",
+            body: new ReadableStream({
+              start(controller) {
+                controller.enqueue(
+                  new TextEncoder().encode(
+                    JSON.stringify({ padding: "x".repeat(70000) }),
+                  ),
+                );
+                controller.close();
+              },
+            }),
+          });
+          assert.equal(streamed.status, 400);
+        }
+        const hiddenDetail = await fetch(
+          origin + "/events/00000000-0000-0000-0000-000000000000",
+        );
+        assert.ok([200, 404].includes(hiddenDetail.status));
+        assert.match(await hiddenDetail.text(), /This page is off the map/);
+      },
+    );
     await t.test("mutations require same origin", async () => {
       assert.equal(
         (await post("/api/auth", { action: "register" }, null, false)).status,
@@ -84,7 +133,6 @@ test("PostgreSQL membership, authentication, approval and publishing", async (t)
           registrationNumber: suffix,
           phone: "+255700000000",
           course: "od24coe",
-          
         });
         assert.equal(r.status, 201);
         const { rows } = await db.query(
@@ -106,7 +154,6 @@ test("PostgreSQL membership, authentication, approval and publishing", async (t)
             registrationNumber: suffix,
             phone: "+255700000000",
             course: "od24coe",
-            
           })
         ).status,
         409,
@@ -211,6 +258,10 @@ test("PostgreSQL membership, authentication, approval and publishing", async (t)
       contentId = rows[0].id;
       const data = await (await fetch(origin + "/api/club")).json();
       assert.ok(data.content.some((c) => c.id === contentId));
+      for (const item of data.content) {
+        assert.ok(!Object.hasOwn(item, "created_by"));
+        assert.ok(!Object.hasOwn(item, "created_at"));
+      }
     });
     await t.test("member booking and admin attendance persist", async () => {
       assert.equal(

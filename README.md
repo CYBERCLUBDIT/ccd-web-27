@@ -30,7 +30,9 @@ Administrators can create events, news, resources, gallery entries, challenges, 
 
 Members can book published events whose start time is still in the future. Administrators mark attendance against bookings. Contact form submissions are available in the administrator workspace; submitting a message does not send an email.
 
-Use real club content. The included stock photographs are decorative imagery, not evidence of club events. Image attribution is recorded in `public/images/SOURCES.md`. Empty content sections remain empty until entries are published.
+The featured imagery and gallery use nine selected photographs from the Cybersecurity Summit, dated 23 May 2026 in the source album, with photography credited to Lazaro Grapher. The owner supplied six photos; three additional photos were selected from the owner-shared album. WebP derivatives are in `public/images/summit/`; the private album invitation token is not included in the repository. Image attribution is recorded in `public/images/SOURCES.md`.
+
+To add the real summit event, news story, and nine gallery entries, run `node --env-file=.env.local scripts/seed-summit.mjs` against your intended database (or provide `DATABASE_URL` through the deployment environment). This is an explicit publishing action: entries are public. Fixed IDs make reruns safe, preserve later administrator edits, and avoid duplicate entries. Deploy the image assets before seeding production. No fictional members, leaders, testimonials, or future event dates are created.
 
 ### Understanding the homepage totals
 
