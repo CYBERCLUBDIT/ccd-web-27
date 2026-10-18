@@ -10,6 +10,7 @@ import { ThemeToggle } from "./theme-toggle";
 import { Logo } from "./shared";
 import { ApplicationSent, MembershipOnboarding } from "./membership-onboarding";
 import styles from "./auth-flow.module.css";
+import { EmailVerification } from "./email-verification";
 async function accountRequest(data: Record<string, unknown>) {
   const response = await fetch("/api/auth", {
     method: "POST",
@@ -89,6 +90,7 @@ function AccountForm({
     profile = page === "complete-profile",
     forgot = page === "forgot-password",
     resend = page === "verify-email";
+  if (resend && managedAuth) return <EmailVerification initialEmail={params.get("email") ?? ""} />;
   if (profile) return <MembershipOnboarding />;
   if (page === "membership-rejected")
     return (
@@ -111,7 +113,7 @@ function AccountForm({
         </h1>
         <p className="auth-description">
           {joining && managedAuth
-            ? "Open the link in your email. Then finish your application."
+            ? "Enter the code from your email. Then finish your application."
             : "An administrator will review your registration. Your club workspace becomes available once your membership is approved."}
         </p>
         <Button asChild>
@@ -119,7 +121,7 @@ function AccountForm({
         </Button>
         {managedAuth && (
           <p>
-            <Link href="/verify-email">Resend confirmation email</Link>
+            <Link href="/verify-email">Enter email code</Link>
           </p>
         )}
       </>
@@ -220,7 +222,8 @@ function AccountForm({
                         : "login",
               token: params.get("token"),
             });
-            if (joining || reset || forgot || resend) setDone(true);
+            if (joining && managedAuth) router.push("/verify-email?email=" + encodeURIComponent(String(fields.email)));
+            else if (joining || reset || forgot || resend) setDone(true);
             else {
               router.push(result.destination);
               router.refresh();
@@ -336,7 +339,7 @@ function AccountForm({
           <Link href="/forgot-password">Forgot password?</Link>
           {managedAuth && (
             <p>
-              <Link href="/verify-email">Resend confirmation email</Link>
+              <Link href="/verify-email">Enter email code</Link>
             </p>
           )}
         </>

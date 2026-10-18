@@ -5,7 +5,7 @@ The Supabase Auth integration is prepared behind `SUPABASE_AUTH_ENABLED`. Do not
 ## User journey
 
 1. `/join` asks for email, password, and confirm password. Google and GitHub buttons appear below the email form.
-2. Email accounts confirm their email; Google/GitHub accounts return through Supabase with a verified email. Unverified identities cannot create a club session.
+2. Email accounts enter the code sent to their email; Google/GitHub accounts return through Supabase with a verified email. Unverified identities cannot create a club session.
 3. Both enter `/complete-profile`: **About you** (full name and phone), then **Student details** (registration number and course).
 4. Submitting those details opens the third step, **Application sent**, with: “Congratulations! Your application is sent. Please wait for approval.”
 5. Only completed applications appear in the administrator's membership list. A verified identity does not grant membership approval or administrator privileges.
@@ -70,18 +70,9 @@ Official guide: https://resend.com/docs/send-with-supabase-smtp
 
 After SMTP is configured, open **Authentication → Emails → Templates**.
 
-Confirm sign-up subject: **Confirm your email**
+Confirm sign-up subject: **Your Cyber Club DIT code**
 
-```html
-<h2>Welcome to Cyber Club DIT</h2>
-<p>Confirm your email to finish your application.</p>
-<p>
-  <a href="{{ .SiteURL }}/auth/confirm?token_hash={{ .TokenHash }}&type=email"
-    >Confirm email</a
-  >
-</p>
-<p>If you did not sign up, you can ignore this email.</p>
-```
+Paste the complete HTML from `emails/verify-email.html` into the Confirm sign-up template. It uses `{{ .Token }}` instead of a confirmation link. Keep **Confirm email** enabled: the code verifies the address. Signup opens `/verify-email`, where the server checks the code with Supabase before starting a club session. Expired, incorrect, and reused codes are rejected. Google and GitHub remain below the email/password form and continue through OAuth to the same onboarding.
 
 Reset-password subject: **Reset your password**
 

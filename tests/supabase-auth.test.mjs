@@ -81,6 +81,15 @@ test(
         return send(200, identity);
       }
       if (url.pathname.endsWith("/verify")) {
+        if (body.token !== undefined) {
+          const key = body.email + ":" + body.token;
+          if (body.email !== email || body.token !== "123456" || body.type !== "email" || usedTokens.has(key))
+            return send(403, { msg: "Expired token", code: "otp_expired" });
+          usedTokens.add(key);
+          const identity = identities.get(email);
+          identity.email_confirmed_at = new Date().toISOString();
+          return send(200, session(identity));
+        }
         if (
           usedTokens.has(body.token_hash) ||
           !["confirm-once", "recover-once"].includes(body.token_hash)
@@ -220,12 +229,18 @@ test(
         },
       );
       await t.test(
-        "email confirmation is single-use, grants no approval, and cannot redirect externally",
+        "email OTP rejects wrong email, invalid and reused codes and grants no approval",
         async () => {
-          const r = await get(
-            "/auth/confirm?token_hash=confirm-once&type=email&next=https://untrusted.example",
-          );
-          assert.equal(r.headers.get("location"), origin + "/complete-profile");
+          const wrong = await post({ action: "verify_otp", email, code: "000000" });
+          assert.equal(wrong.status, 400);
+          assert.ok(!jar.has("ccd_session"));
+          const mismatch = await post({ action: "verify_otp", email: "other@example.com", code: "123456" });
+          assert.equal(mismatch.status, 400);
+          const r = await post({ action: "verify_otp", email, code: "123456" });
+          assert.equal(r.status, 200);
+          assert.equal((await r.json()).destination, "/complete-profile");
+          const reused = await post({ action: "verify_otp", email, code: "123456" });
+          assert.equal(reused.status, 400);
           assert.ok(jar.has("ccd_session"));
           assert.equal((await get("/api/admin")).status, 403);
           const { rows } = await db.query(
@@ -233,10 +248,7 @@ test(
             [email],
           );
           assert.deepEqual(rows[0], { role: "member", status: "pending" });
-          const replay = await get(
-            "/auth/confirm?token_hash=confirm-once&type=email",
-          );
-          assert.match(replay.headers.get("location"), /confirmation_failed/);
+
         },
       );
       await t.test(

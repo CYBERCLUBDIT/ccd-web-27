@@ -100,6 +100,19 @@ export async function supabaseAccount(body: Record<string, unknown>) {
     });
     return NextResponse.json({ ok: true });
   }
+  if (action === "verify_otp") {
+    const token = String(body.code ?? "").trim();
+    if (!/^\d{6,10}$/.test(token))
+      throw new Error("Enter the code from your email.");
+    const { data, error } = await client.auth.verifyOtp({ email, token, type: "email" });
+    if (error || !data.user)
+      throw new Error("This code is incorrect or expired. Request a new code.");
+    const user = await verifiedClubUser(data.user);
+    if (user.status === "rejected")
+      return NextResponse.json({ error: "Your membership has not been approved." }, { status: 403 });
+    await startSession(user.id);
+    return NextResponse.json({ ok: true, destination: memberDestination(user) });
+  }
   if (password.length < 12 || password.length > 128)
     throw new Error("Use a password of 12–128 characters.");
   if (action === "register") {
