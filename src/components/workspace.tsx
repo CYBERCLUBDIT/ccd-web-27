@@ -9,7 +9,6 @@ import { Textarea } from "./ui/textarea";
 import { Logo } from "./shared";
 import {
   BookOpen,
-  Images,
   Newspaper,
   LayoutDashboard,
   Users,
@@ -29,7 +28,6 @@ import {
 } from "lucide-react";
 import { type ClubUser, type ClubContent, formatDate } from "@/lib/models";
 import { LearningHub } from "./learning-hub";
-import { Gallery } from "./gallery";
 import { learningLabs } from "@/lib/learning-labs";
 import styles from "./workspace.module.css";
 type Applicant = ClubUser & { created_at: string };
@@ -106,13 +104,6 @@ export function Workspace({
         { id: "challenges", label: "Challenges", icon: Flag, group: "Explore" },
         { id: "learning", label: "Learning", icon: BookOpen, group: "Explore" },
         { id: "news", label: "Club news", icon: Newspaper, group: "Community" },
-        { id: "gallery", label: "Gallery", icon: Images, group: "Community" },
-        {
-          id: "community",
-          label: "Our community",
-          icon: Users,
-          group: "Community",
-        },
         {
           id: "profile",
           label: "My profile",
@@ -256,11 +247,7 @@ export function Workspace({
                 </span>
               </div>
               {active === "overview" && (
-                <StudentHome
-                  content={filtered}
-                  user={user}
-                  setActive={setActive}
-                />
+                <StudentHome content={filtered} setActive={setActive} />
               )}
               {active === "learning" && (
                 <>
@@ -277,18 +264,6 @@ export function Workspace({
                   empty="No matching club news."
                 />
               )}
-              {active === "gallery" && (
-                <Gallery items={filtered.filter((c) => c.kind === "gallery")} />
-              )}
-              {active === "community" && (
-                <ContentCollection
-                  items={filtered.filter((c) =>
-                    ["leader", "testimonial"].includes(c.kind),
-                  )}
-                  empty="Community profiles and stories will appear here."
-                />
-              )}
-
               {active === "events" && (
                 <div className="portal-event-grid">
                   {filtered
@@ -362,118 +337,130 @@ export function Workspace({
 }
 function StudentHome({
   content,
-  user,
   setActive,
 }: {
   content: ClubContent[];
-  user: ClubUser;
   setActive: (value: string) => void;
 }) {
   const events = content.filter((c) => c.kind === "event");
-  const news = content.filter((c) => c.kind === "news");
+  const nextEvent = events
+    .filter(
+      (c) => c.event_date && new Date(c.event_date).getTime() > Date.now(),
+    )
+    .sort(
+      (a, b) =>
+        new Date(a.event_date!).getTime() - new Date(b.event_date!).getTime(),
+    )[0];
+  const featuredEvent =
+    nextEvent ??
+    events
+      .slice()
+      .sort(
+        (a, b) =>
+          new Date(b.event_date ?? 0).getTime() -
+          new Date(a.event_date ?? 0).getTime(),
+      )[0];
+  const latestNews = content.find((c) => c.kind === "news");
+  const lab = learningLabs[0];
   return (
     <div className={styles.home}>
-      <section className={styles.welcome}>
+      <section className={`${styles.welcome} ${styles.compactWelcome}`}>
         <div>
-          <span className={styles.eyebrow}>YOUR CLUB. YOUR NEXT STEP.</span>
+          <span className={styles.eyebrow}>YOUR NEXT SMALL WIN</span>
           <h2>
-            Build skills.
+            Stay curious.
             <br />
-            Make connections.
+            Build something stronger.
           </h2>
-          <p>
-            Practical labs, club events, and ideas worth sharing — all in your
-            workspace.
-          </p>
+          <p>A little practice today. More confidence tomorrow.</p>
           <Button onClick={() => setActive("learning")}>
             Explore Learning <ArrowUpRight size={16} />
           </Button>
         </div>
-        <img
-          src="/illustrations/security-grid.svg"
-          alt=""
-          width={360}
-          height={260}
-        />
+        <span className={styles.labCount}>
+          <BookOpen size={26} />
+          <strong>{learningLabs.length}</strong>
+          <span>
+            practice labs
+            <br />
+            ready to explore
+          </span>
+        </span>
       </section>
-      <div className="portal-summary-grid student-summary-row">
-        <SummaryCard
-          label="Membership"
-          value="Active"
-          detail={user.registration_number}
-          icon={ShieldCheck}
-        />
-        <SummaryCard
-          label="Club events"
-          value={String(events.length)}
-          detail="Upcoming sessions and past highlights"
-          icon={CalendarDays}
-        />
-        <SummaryCard
-          label="Practice labs"
-          value={String(learningLabs.length)}
-          detail="Short, interactive learning demos"
-          icon={BookOpen}
-        />
-      </div>
-      <div className={styles.sectionTitle}>
-        <div>
-          <span className={styles.eyebrow}>LEARN BY DOING</span>
-          <h2>Your next small win</h2>
-        </div>
-        <button onClick={() => setActive("learning")}>
-          All labs <ArrowUpRight size={15} />
-        </button>
-      </div>
-      <div className={styles.labGrid}>
-        {learningLabs.slice(0, 3).map((lab) => (
+      <div className={styles.focusGrid}>
+        <section className={styles.focusCard}>
+          <div className={styles.sectionTitle}>
+            <span className={styles.eyebrow}>PICK UP A SKILL</span>
+            <BookOpen size={18} />
+          </div>
+          <h3>{lab.title}</h3>
+          <p>{lab.description}</p>
+          <span className={styles.eventBadge}>
+            {lab.level} · {lab.minutes} min · Demo
+          </span>
           <button
-            key={lab.id}
-            className={styles.labCard}
+            className={styles.focusLink}
             onClick={() => setActive("learning")}
           >
-            <BookOpen size={21} />
-            <span className={styles.eyebrow}>PRACTICE LAB · DEMO</span>
-            <h3>{lab.title}</h3>
-            <p>{lab.description}</p>
-            <span>
-              Start learning <ArrowUpRight size={15} />
-            </span>
+            Try a lab <ArrowUpRight size={15} />
           </button>
-        ))}
+        </section>
+        <section className={styles.focusCard}>
+          <div className={styles.sectionTitle}>
+            <span className={styles.eyebrow}>
+              {nextEvent ? "NEXT ON THE CALENDAR" : "LATEST EVENT"}
+            </span>
+            <CalendarDays size={18} />
+          </div>
+          {featuredEvent ? (
+            <>
+              <h3>{featuredEvent.title}</h3>
+              <p>
+                {featuredEvent.event_date
+                  ? formatDate(featuredEvent.event_date)
+                  : "Date to be announced"}
+                {featuredEvent.location ? " · " + featuredEvent.location : ""}
+              </p>
+              <span className={styles.eventBadge}>
+                {nextEvent ? "Upcoming" : "Past event"}
+              </span>
+              <button
+                className={styles.focusLink}
+                onClick={() => setActive("events")}
+              >
+                {nextEvent ? "View events" : "Explore event highlights"}{" "}
+                <ArrowUpRight size={15} />
+              </button>
+            </>
+          ) : (
+            <>
+              <h3>Good things are coming.</h3>
+              <p>New club sessions will appear here.</p>
+              <button
+                className={styles.focusLink}
+                onClick={() => setActive("events")}
+              >
+                Browse events <ArrowUpRight size={15} />
+              </button>
+            </>
+          )}
+        </section>
       </div>
-      <div className={styles.sectionTitle}>
-        <div>
-          <span className={styles.eyebrow}>IN THE CLUB</span>
-          <h2>Events & highlights</h2>
-        </div>
-        <button onClick={() => setActive("events")}>
-          All events <ArrowUpRight size={15} />
-        </button>
-      </div>
-      <div className="portal-event-grid">
-        {events.slice(0, 2).map((item) => (
-          <PortalEvent key={item.id} item={item} />
-        ))}
-        {!events.length && <PortalEmpty text="Club events will appear here." />}
-      </div>
-      <div className={styles.sectionTitle}>
-        <h2>Latest from the club</h2>
-        <button onClick={() => setActive("news")}>
-          All news <ArrowUpRight size={15} />
-        </button>
-      </div>
-      <ContentCollection
-        items={news.slice(0, 2)}
-        empty="Club news will appear here."
-      />
-      <div className={styles.sectionTitle}>
-        <h2>Life at Cyber Club DIT</h2>
-        <button onClick={() => setActive("gallery")}>
-          Open gallery <ArrowUpRight size={15} />
-        </button>
-      </div>
-      <Gallery compact items={content.filter((c) => c.kind === "gallery")} />
+      {latestNews && (
+        <section className={styles.newsStrip}>
+          <Newspaper size={21} />
+          <div>
+            <span className={styles.eyebrow}>FROM THE CLUB</span>
+            <h3>{latestNews.title}</h3>
+          </div>
+          <button
+            className={styles.focusLink}
+            onClick={() => setActive("news")}
+          >
+            Read news <ArrowUpRight size={15} />
+          </button>
+        </section>
+      )}
     </div>
   );
 }

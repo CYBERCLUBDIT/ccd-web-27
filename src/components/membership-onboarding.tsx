@@ -33,25 +33,27 @@ export function ApplicationSent({ approved = false }: { approved?: boolean }) {
   return (
     <>
       <OnboardingSteps step={3} />
-      <div className={styles.success}>
-        <Check size={28} aria-hidden="true" />
+      <div className={styles.applicationMessage}>
+        <div className={styles.success}>
+          <Check size={28} aria-hidden="true" />
+        </div>
+        <h1>Congratulations!</h1>
+        <p className="auth-description">
+          {approved
+            ? "Your details are saved. Your membership is already approved."
+            : "Your application is sent. Please wait for approval."}
+        </p>
+        <p className="auth-description">
+          {approved
+            ? "You can now open your student dashboard."
+            : "Once approved, sign in to open your club account."}
+        </p>
+        <Button asChild>
+          <Link href={approved ? "/member" : "/"}>
+            {approved ? "Open dashboard" : "Back to website"}
+          </Link>
+        </Button>
       </div>
-      <h1>Congratulations!</h1>
-      <p className="auth-description">
-        {approved
-          ? "Your details are saved. Your membership is already approved."
-          : "Your application is sent. Please wait for approval."}
-      </p>
-      <p className="auth-description">
-        {approved
-          ? "You can now open your student dashboard."
-          : "Once approved, sign in to open your club account."}
-      </p>
-      <Button asChild>
-        <Link href={approved ? "/member" : "/"}>
-          {approved ? "Open dashboard" : "Back to website"}
-        </Link>
-      </Button>
     </>
   );
 }

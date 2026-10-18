@@ -165,3 +165,36 @@
     display: none;
   }
 }
+.applicationMessage {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  width: 100%;
+}
+.applicationMessage .success {
+  margin-inline: auto;
+}
+.applicationMessage > :global([data-slot="button"]) {
+  align-self: center;
+  width: auto;
+  min-width: 180px;
+  margin-top: 8px;
+}
+.centeredLink {
+  display: block;
+  width: 100%;
+  text-align: center;
+  margin-top: 12px;
+}
+.applicationMessage h1 {
+  font-size: clamp(26px, 2.4vw, 34px);
+  font-weight: 650;
+  line-height: 1.2;
+  letter-spacing: -0.035em;
+  margin: 4px 0 14px;
+}
+.applicationMessage :global(.auth-description) {
+  margin: 0 0 16px;
+  line-height: 1.7;
+}

@@ -375,3 +375,118 @@
   scrollbar-width: thin;
   scrollbar-color: #294560 transparent;
 }
+.compactWelcome {
+  grid-template-columns: 1fr auto;
+  padding: clamp(24px, 3vw, 34px);
+  background:
+    radial-gradient(ellipse at 100% 0%, #244b82, transparent 65%), #0a1c36;
+}
+.compactWelcome h2 {
+  font-size: clamp(26px, 3vw, 38px);
+}
+.compactWelcome p {
+  margin-bottom: 18px;
+}
+.labCount {
+  display: grid;
+  grid-template-columns: auto auto;
+  gap: 10px 18px;
+  align-items: center;
+  padding: 24px;
+  border-left: 1px solid #ffffff24;
+  color: #a9c9ff;
+}
+.labCount strong {
+  font-size: 48px;
+  line-height: 1;
+  color: #fff;
+  font-weight: 600;
+}
+.labCount > span {
+  grid-column: 1 / -1;
+  font-size: 12px;
+  line-height: 1.6;
+}
+.focusGrid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+}
+.focusCard {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 15px;
+  padding: 26px;
+  border: 1px solid var(--portal-line);
+  border-radius: 18px;
+  background: var(--portal-panel);
+}
+.focusCard .sectionTitle {
+  width: 100%;
+  margin: 0;
+  color: #5479b5;
+}
+.focusCard h3 {
+  font-size: 20px;
+  font-weight: 600;
+  letter-spacing: -0.03em;
+  line-height: 1.4;
+}
+.focusCard p {
+  font-size: 13px;
+  color: var(--portal-sub);
+  line-height: 1.7;
+}
+.focusLink {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 13px;
+  color: var(--portal-blue);
+  font-weight: 600;
+  cursor: pointer;
+}
+.focusCard .focusLink {
+  margin-top: auto;
+  padding-top: 5px;
+}
+.newsStrip {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  padding: 20px 24px;
+  border: 1px solid var(--portal-line);
+  border-radius: 15px;
+  background: var(--portal-panel);
+}
+.newsStrip > svg {
+  color: #5479b5;
+  flex-shrink: 0;
+}
+.newsStrip h3 {
+  font-size: 15px;
+  font-weight: 600;
+  margin-top: 5px;
+}
+.newsStrip .focusLink {
+  margin-left: auto;
+  flex-shrink: 0;
+}
+@media (max-width: 640px) {
+  .compactWelcome {
+    grid-template-columns: 1fr;
+  }
+  .labCount {
+    display: none;
+  }
+  .focusGrid {
+    grid-template-columns: 1fr;
+  }
+  .newsStrip {
+    flex-wrap: wrap;
+  }
+  .newsStrip .focusLink {
+    margin-left: 39px;
+  }
+}

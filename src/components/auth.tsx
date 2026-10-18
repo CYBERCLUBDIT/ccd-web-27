@@ -389,9 +389,11 @@ function AccountForm({
       )}
       {["sign-in", "admin-sign-in"].includes(page) && (
         <>
-          <Link href="/forgot-password">Forgot password?</Link>
+          <p className={styles.centeredLink}>
+            <Link href="/forgot-password">Forgot password?</Link>
+          </p>
           {managedAuth && (
-            <p>
+            <p className={styles.centeredLink}>
               <Link href="/verify-email">Enter email code</Link>
             </p>
           )}

@@ -253,4 +253,4 @@ Commit and push completed changes to this repository. The default branch is `mai
 
 No license file is currently included. Confirm permitted reuse and distribution with the repository owner.
 
-The student workspace shares published events (including past recaps), news, Learning materials, community profiles, and gallery content with the public website. Its Learning section uses the same six interactive demo labs. Admin navigation groups people, publishing, and communication; application lists can be filtered by approval status. Login and registration use different summit photos in the same left-aligned panel layout.
+The student workspace shares published events (including past recaps), news, and Learning materials with the public website. Gallery and community profiles remain on the public website; the student overview focuses on one practice lab, the next or latest event, and a news shortcut. Its Learning section uses the same six interactive demo labs. Admin navigation groups people, publishing, and communication; application lists can be filtered by approval status. Login and registration use different summit photos in the same left-aligned panel layout.
