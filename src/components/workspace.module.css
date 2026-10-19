@@ -585,3 +585,14 @@
     align-items: flex-start;
   }
 }
+
+:global(html.dark) .actionWelcome {
+  background: linear-gradient(120deg, #152d4b, #101e30);
+}
+
+:global(html.dark) .workspace {
+  --portal-blue: #98baff;
+}
+:global(html.dark) .deskLinks button {
+  color: #a5c7ff;
+}

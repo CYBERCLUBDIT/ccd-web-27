@@ -82,7 +82,6 @@ export default async function Page({ params }: Props) {
             "audit",
             "members",
             "content",
-            "attendance",
             "messages",
           ].includes(second)))
     )

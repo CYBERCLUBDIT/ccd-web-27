@@ -111,7 +111,7 @@ export async function GET(request: Request) {
       { headers },
     );
   }
-  if (!["all", "overview", "members", "messages", "attendance"].includes(view))
+  if (!["all", "overview", "members", "messages"].includes(view))
     return NextResponse.json(
       { error: "Unknown admin view." },
       { status: 400, headers },
@@ -138,14 +138,10 @@ export async function GET(request: Request) {
         "SELECT id,name,email,message,created_at FROM messages ORDER BY created_at DESC" +
           (view === "overview" ? " LIMIT 3" : ""),
       ),
-    attendance: () =>
-      db.query(
-        "SELECT a.*,u.name,u.email,c.title FROM attendance a JOIN users u ON u.id=a.user_id JOIN content c ON c.id=a.event_id ORDER BY a.created_at DESC",
-      ),
   };
   const keys =
     view === "all"
-      ? ["members", "content", "messages", "attendance"]
+      ? ["members", "content", "messages"]
       : view === "overview"
         ? ["members", "content", "messages"]
         : [view];
@@ -275,13 +271,6 @@ export async function POST(request: Request) {
         [body.published === true, body.id],
         user.id,
         body.published === true ? "content.publish" : "content.unpublish",
-      );
-    } else if (body.action === "attendance") {
-      await auditedChange(
-        "UPDATE attendance SET attended=$1 WHERE event_id=$2 AND user_id=$3 RETURNING user_id AS id",
-        [body.attended === true, body.eventId, body.userId],
-        user.id,
-        body.attended === true ? "attendance.present" : "attendance.absent",
       );
     } else throw new Error("Unknown action");
     return NextResponse.json({ ok: true });

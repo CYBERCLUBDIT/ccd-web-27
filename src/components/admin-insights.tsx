@@ -32,9 +32,14 @@ type Analytics = {
     id: string;
     title: string;
     registrations: number;
-    attended: number;
   }[];
-  attendance: { registrations: number; attended: number };
+  visitors: {
+    today: number;
+    week: number;
+    total: number;
+    since: string | null;
+    days: { day: string; label: string; visitors: number }[];
+  };
   generatedAt: string;
 };
 const actionLabels: Record<string, string> = {
@@ -103,7 +108,7 @@ export function AdminInsights({
     };
   }, [view, search, action, before, refresh]);
   const total = report?.membership.total ?? 0;
-  const registrations = report?.attendance.registrations ?? 0;
+
   const peak = Math.max(
     1,
     ...(report?.months.map((m) => m.applications) ?? []),
@@ -116,7 +121,7 @@ export function AdminInsights({
           <p>
             {view === "audit"
               ? "A clear record of administrator changes."
-              : "Membership, publishing, and event participation."}
+              : "Visitors, membership, and publishing."}
           </p>
         </div>
         <Button
@@ -228,8 +233,7 @@ export function AdminInsights({
         report && (
           <>
             <p className={styles.note}>
-              Platform records only · All-time totals · Refreshed{" "}
-              {timestamp(report.generatedAt)} EAT
+              Platform records · Refreshed {timestamp(report.generatedAt)} EAT
             </p>
             <div className={styles.metrics}>
               {[
@@ -246,19 +250,15 @@ export function AdminInsights({
                   Icon: ClipboardList,
                 },
                 {
-                  label: "Event registrations",
-                  value: registrations,
-                  detail: "Across recorded club events",
+                  label: "Visitors today",
+                  value: report.visitors.today,
+                  detail: "One browser, one visit per day  /  EAT",
                   Icon: Activity,
                 },
                 {
-                  label: "Attendance recorded",
-                  value: registrations
-                    ? Math.round(
-                        (report.attendance.attended / registrations) * 100,
-                      ) + "%"
-                    : "—",
-                  detail: `${report.attendance.attended} marked present of ${registrations} registrations`,
+                  label: "Visitors this week",
+                  value: report.visitors.week,
+                  detail: "Unique browsers across the last 7 days",
                   Icon: CheckCircle2,
                 },
               ].map(({ label, value, detail, Icon }) => (
@@ -270,6 +270,42 @@ export function AdminInsights({
                 </section>
               ))}
             </div>
+            <section className={styles.panel}>
+              <div className={styles.panelHeading}>
+                <div>
+                  <Activity size={18} />
+                  <h2>Website visitors</h2>
+                </div>
+                <span className={styles.badge}>
+                  {report.visitors.total} unique browsers overall
+                </span>
+              </div>
+              <p className={styles.note}>
+                Each browser counts once per day, even after repeated logins.
+                Different browsers or devices count separately.{" "}
+                {report.visitors.since
+                  ? `Tracking since ${report.visitors.since}.`
+                  : "Tracking begins with the first visit after this update is deployed."}
+              </p>
+              <div className={`${styles.chart} ${styles.visitorChart}`}>
+                {report.visitors.days.map((day) => (
+                  <div
+                    key={day.day}
+                    aria-label={`${day.label}: ${day.visitors} visitors`}
+                  >
+                    <strong>{day.visitors}</strong>
+                    <div className={styles.barTrack}>
+                      <span
+                        style={{
+                          height: `${(day.visitors / Math.max(1, ...report.visitors.days.map((d) => d.visitors))) * 100}%`,
+                        }}
+                      />
+                    </div>
+                    <small>{day.label}</small>
+                  </div>
+                ))}
+              </div>
+            </section>
             <div className={styles.twoColumns}>
               <section className={styles.panel}>
                 <div className={styles.panelHeading}>
@@ -366,19 +402,15 @@ export function AdminInsights({
               </section>
               <section className={styles.panel}>
                 <div className={styles.panelHeading}>
-                  <h2>Event participation</h2>
+                  <h2>Event registrations</h2>
                 </div>
-                <p className={styles.note}>
-                  Ten most recent published events. Presence must be recorded by
-                  an administrator.
-                </p>
+                <p className={styles.note}>Ten most recent published events.</p>
                 <div className={styles.tableWrap}>
                   <table>
                     <thead>
                       <tr>
                         <th>Event</th>
                         <th>Registered</th>
-                        <th>Present</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -386,7 +418,6 @@ export function AdminInsights({
                         <tr key={row.id}>
                           <td>{row.title}</td>
                           <td>{row.registrations}</td>
-                          <td>{row.attended}</td>
                         </tr>
                       ))}
                     </tbody>

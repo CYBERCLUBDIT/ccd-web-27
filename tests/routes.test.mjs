@@ -470,38 +470,41 @@ test("PostgreSQL membership, authentication, approval and publishing", async (t)
         );
       },
     );
-    await t.test("member booking and admin attendance persist", async () => {
-      assert.equal(
-        (
-          await post(
-            "/api/club",
-            { action: "book", eventId: contentId },
-            studentCookie,
-          )
-        ).status,
-        200,
-      );
-      assert.equal(
-        (
-          await post(
-            "/api/admin",
-            {
-              action: "attendance",
-              eventId: contentId,
-              userId: id,
-              attended: true,
-            },
-            adminCookie,
-          )
-        ).status,
-        200,
-      );
-      const { rows } = await db.query(
-        "SELECT attended FROM attendance WHERE event_id=$1 AND user_id=$2",
-        [contentId, id],
-      );
-      assert.equal(rows[0].attended, true);
-    });
+    await t.test(
+      "event booking persists while retired attendance actions are rejected",
+      async () => {
+        assert.equal(
+          (
+            await post(
+              "/api/club",
+              { action: "book", eventId: contentId },
+              studentCookie,
+            )
+          ).status,
+          200,
+        );
+        assert.equal(
+          (
+            await post(
+              "/api/admin",
+              {
+                action: "attendance",
+                eventId: contentId,
+                userId: id,
+                attended: true,
+              },
+              adminCookie,
+            )
+          ).status,
+          400,
+        );
+        const { rows } = await db.query(
+          "SELECT attended FROM attendance WHERE event_id=$1 AND user_id=$2",
+          [contentId, id],
+        );
+        assert.equal(rows[0].attended, false);
+      },
+    );
     await t.test(
       "analytics and audit reports require administrator access",
       async () => {
@@ -516,7 +519,7 @@ test("PostgreSQL membership, authentication, approval and publishing", async (t)
       },
     );
     await t.test(
-      "analytics reports actual registrations and attendance",
+      "analytics reports actual registrations and daily unique visitors",
       async () => {
         const r = await fetch(origin + "/api/admin/insights?view=analytics", {
           headers: { Cookie: adminCookie },
@@ -528,8 +531,10 @@ test("PostgreSQL membership, authentication, approval and publishing", async (t)
         assert.ok(data.membership.approved >= 1);
         const event = data.events.find((e) => e.id === contentId);
         assert.equal(event.registrations, 1);
-        assert.equal(event.attended, 1);
-        assert.ok(data.attendance.attended <= data.attendance.registrations);
+        assert.equal(data.attendance, undefined);
+        assert.equal(data.visitors.days.length, 14);
+        assert.ok(data.visitors.today >= 0);
+        assert.ok(data.visitors.total >= data.visitors.week);
         for (const page of ["analytics", "audit"]) {
           const html = await (
             await fetch(origin + "/admin/" + page, {
@@ -558,11 +563,7 @@ test("PostgreSQL membership, authentication, approval and publishing", async (t)
           "SELECT action FROM audit_log WHERE actor_id=(SELECT id FROM users WHERE email=$1)",
           [adminEmail],
         );
-        for (const action of [
-          "approve",
-          "content.create",
-          "attendance.present",
-        ])
+        for (const action of ["approve", "content.create"])
           assert.ok(actions.rows.some((row) => row.action === action));
         await db.query(
           "INSERT INTO audit_log(actor_id,action,target_id) SELECT u.id,'content.create',$2 FROM users u CROSS JOIN generate_series(1,27) WHERE u.email=$1",

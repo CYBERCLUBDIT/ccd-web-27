@@ -11676,7 +11676,7 @@ html:not(.dark) .dashboard-hero p {
 @media(max-width:900px) { .portal-sidebar { visibility:hidden; } .portal-sidebar.is-open { visibility:visible; } }
 
 /* Fixed split portal palette: black/blue navigation, white working area, Outfit. */
-html .portal-shell {
+html:not(.dark) .portal-shell {
  --portal-bg:#fff; --portal-panel:#fff; --portal-side:#fff; --portal-line:#e2e8f1;
  --portal-ink:#172c48; --portal-sub:#6d7f97;
  --background:#fff; --card:#fff; --secondary:#edf3fb; --muted:#f4f7fb;
@@ -12123,3 +12123,15 @@ html .admin-portal .portal-main { background:#f5f7fb; }
  .admin-overview .portal-quick-actions { grid-template-columns:1fr; }
  .admin-overview .portal-panel-heading { gap:10px; flex-wrap:wrap; }
 }
+
+html.dark .portal-shell { --portal-bg:#091321; --portal-panel:#101e30; --portal-side:#0b1728; --portal-line:#26374d; --portal-ink:#edf3ff; --portal-sub:#a5b5cd; --background:#101e30; --card:#101e30; --foreground:#edf3ff; --muted-foreground:#a5b5cd; --border:#26374d; --secondary:#1b2c43; --primary:#719bff; color-scheme:dark; }
+html.dark .portal-shell .portal-main { background:var(--portal-bg); }
+html.dark .portal-shell .portal-topbar, html.dark .portal-shell .portal-footer, html.dark .portal-shell input, html.dark .portal-shell textarea, html.dark .portal-shell select, html.dark .portal-shell [data-slot=button][data-variant=outline] { background:var(--portal-panel); color:var(--portal-ink); border-color:var(--portal-line); }
+html.dark .portal-shell .portal-search, html.dark .portal-shell .portal-summary:not(.accent) { background:#16263c; }
+html.dark .portal-shell .student-dashboard-card {color:var(--portal-ink);}
+
+html.dark .portal-shell {color:var(--portal-ink);background:var(--portal-bg);}
+html.dark .portal-shell .portal-body, html.dark .portal-shell .portal-panel, html.dark .portal-shell .student-dashboard-card {background:var(--portal-panel);border-color:var(--portal-line);}
+html.dark .portal-shell .portal-page-heading h1, html.dark .portal-shell .portal-topbar strong, html.dark .portal-shell .portal-panel h2, html.dark .portal-shell .portal-panel h3, html.dark .portal-shell .portal-table strong, html.dark .portal-shell .portal-profile-list dd {color:var(--portal-ink);}
+html.dark .portal-shell .portal-page-heading p, html.dark .portal-shell .portal-profile-list dt {color:var(--portal-sub);}
+html.dark .portal-shell .portal-table th, html.dark .portal-shell .portal-table tbody tr:hover, html.dark .portal-shell .student-friendly-empty, html.dark .portal-shell .student-ctf-empty {background:#17283e;color:var(--portal-ink);border-color:var(--portal-line);}

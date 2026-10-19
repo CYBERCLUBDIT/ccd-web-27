@@ -56,33 +56,39 @@ export async function GET(request: Request) {
       { status: 400, headers },
     );
   const managed = supabaseAuthEnabled();
-  const [membership, months, content, events, attendance] = await Promise.all([
-    db.query(
-      `SELECT count(*)::int AS total,count(*) FILTER(WHERE status='approved')::int AS approved,count(*) FILTER(WHERE status='pending')::int AS pending,count(*) FILTER(WHERE status='rejected')::int AS rejected FROM users WHERE role='member' AND (NOT $1::boolean OR onboarding_completed_at IS NOT NULL)`,
-      [managed],
-    ),
-    db.query(
-      `WITH months AS (SELECT generate_series(date_trunc('month',now() AT TIME ZONE 'Africa/Dar_es_Salaam')-interval '5 months',date_trunc('month',now() AT TIME ZONE 'Africa/Dar_es_Salaam'),interval '1 month') AS month)
+  const [membership, months, content, events, visitors, visitorDays] =
+    await Promise.all([
+      db.query(
+        `SELECT count(*)::int AS total,count(*) FILTER(WHERE status='approved')::int AS approved,count(*) FILTER(WHERE status='pending')::int AS pending,count(*) FILTER(WHERE status='rejected')::int AS rejected FROM users WHERE role='member' AND (NOT $1::boolean OR onboarding_completed_at IS NOT NULL)`,
+        [managed],
+      ),
+      db.query(
+        `WITH months AS (SELECT generate_series(date_trunc('month',now() AT TIME ZONE 'Africa/Dar_es_Salaam')-interval '5 months',date_trunc('month',now() AT TIME ZONE 'Africa/Dar_es_Salaam'),interval '1 month') AS month)
       SELECT to_char(m.month,'Mon YYYY') AS label,count(u.id)::int AS applications FROM months m LEFT JOIN users u ON u.role='member' AND (NOT $1::boolean OR u.onboarding_completed_at IS NOT NULL) AND date_trunc('month',coalesce(u.onboarding_completed_at,u.created_at) AT TIME ZONE 'Africa/Dar_es_Salaam')=m.month GROUP BY m.month ORDER BY m.month`,
-      [managed],
-    ),
-    db.query(
-      "SELECT kind,count(*) FILTER(WHERE published)::int AS published,count(*) FILTER(WHERE NOT published)::int AS drafts FROM content GROUP BY kind ORDER BY kind",
-    ),
-    db.query(
-      `SELECT c.id,c.title,c.event_date,count(a.user_id)::int AS registrations,count(a.user_id) FILTER(WHERE a.attended)::int AS attended FROM content c LEFT JOIN attendance a ON a.event_id=c.id WHERE c.kind='event' AND c.published GROUP BY c.id ORDER BY c.event_date DESC NULLS LAST,c.created_at DESC LIMIT 10`,
-    ),
-    db.query(
-      "SELECT count(*)::int AS registrations,count(*) FILTER(WHERE attended)::int AS attended FROM attendance",
-    ),
-  ]);
+        [managed],
+      ),
+      db.query(
+        "SELECT kind,count(*) FILTER(WHERE published)::int AS published,count(*) FILTER(WHERE NOT published)::int AS drafts FROM content GROUP BY kind ORDER BY kind",
+      ),
+      db.query(
+        `SELECT c.id,c.title,c.event_date,count(a.user_id)::int AS registrations FROM content c LEFT JOIN attendance a ON a.event_id=c.id WHERE c.kind='event' AND c.published GROUP BY c.id ORDER BY c.event_date DESC NULLS LAST,c.created_at DESC LIMIT 10`,
+      ),
+      db.query(
+        `SELECT count(*) FILTER(WHERE visit_day=(now() AT TIME ZONE 'Africa/Dar_es_Salaam')::date)::int AS today,
+      count(DISTINCT visitor_hash) FILTER(WHERE visit_day>=(now() AT TIME ZONE 'Africa/Dar_es_Salaam')::date-6)::int AS week,
+      count(DISTINCT visitor_hash)::int AS total, min(visit_day)::text AS since FROM site_visits`,
+      ),
+      db.query(`SELECT d::date::text AS day,to_char(d,'DD Mon') AS label,count(v.visitor_hash)::int AS visitors
+      FROM generate_series((now() AT TIME ZONE 'Africa/Dar_es_Salaam')::date-13,(now() AT TIME ZONE 'Africa/Dar_es_Salaam')::date,interval '1 day') d
+      LEFT JOIN site_visits v ON v.visit_day=d::date GROUP BY d ORDER BY d`),
+    ]);
   return NextResponse.json(
     {
       membership: membership.rows[0],
       months: months.rows,
       content: content.rows,
       events: events.rows,
-      attendance: attendance.rows[0],
+      visitors: { ...visitors.rows[0], days: visitorDays.rows },
       generatedAt: new Date().toISOString(),
     },
     { headers },

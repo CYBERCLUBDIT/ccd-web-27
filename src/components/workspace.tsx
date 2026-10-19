@@ -1,4 +1,5 @@
 "use client";
+import { ThemeToggle } from "./theme-toggle";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { useRouter, usePathname } from "next/navigation";
@@ -113,12 +114,6 @@ export function Workspace({
           group: "Workspace",
         },
         { id: "members", label: "Members", icon: Users, group: "People" },
-        {
-          id: "attendance",
-          label: "Attendance",
-          icon: ClipboardCheck,
-          group: "People",
-        },
         {
           id: "content",
           label: "Content",
@@ -259,6 +254,7 @@ export function Workspace({
                 />
               </label>
             )}
+            <ThemeToggle />
             <span className="portal-top-avatar" title={user.name}>
               {user.name.slice(0, 1).toUpperCase()}
             </span>
@@ -387,9 +383,7 @@ export function Workspace({
             </>
           )}
         </main>
-        <footer className="portal-footer">
-          Cyber Club DIT<span>Built by epro Tech</span>
-        </footer>
+        <footer className="portal-footer">Cyber Club DIT</footer>
       </div>
     </div>
   );
@@ -643,7 +637,6 @@ function AdminPortal({
 }) {
   const [members, setMembers] = useState<Applicant[]>([]),
     [content, setContent] = useState<ClubContent[]>([]),
-    [attendance, setAttendance] = useState<Entry[]>([]),
     [messages, setMessages] = useState<
       { id: string; name: string; email: string; message: string }[]
     >([]),
@@ -661,7 +654,6 @@ function AdminPortal({
     if (!r.ok) throw new Error(d.error);
     setMembers(d.members ?? []);
     setContent(d.content ?? []);
-    setAttendance(d.attendance ?? []);
     setMessages(d.messages ?? []);
   }
   useEffect(() => {
@@ -817,10 +809,6 @@ function AdminPortal({
             </section>
           </div>
           <div className={styles.deskLinks}>
-            <button onClick={() => setTab("attendance")}>
-              <ClipboardCheck size={17} /> Record attendance{" "}
-              <ArrowUpRight size={14} />
-            </button>
             <button onClick={() => setTab("analytics")}>
               <BarChart3 size={17} /> View trends in Analytics{" "}
               <ArrowUpRight size={14} />
@@ -873,45 +861,6 @@ function AdminPortal({
             save={save}
           />
         </section>
-      )}
-      {!loading && tab === "attendance" && (
-        <>
-          {attendance.length === 0 && (
-            <p className="live-empty">Event registrations will appear here.</p>
-          )}
-          {attendance
-            .filter((a) =>
-              (a.name + " " + a.title)
-                .toLowerCase()
-                .includes(search.toLowerCase()),
-            )
-            .map((a) => (
-              <section
-                className="student-dashboard-card admin-applicant"
-                key={a.event_id + a.user_id}
-              >
-                <div>
-                  <h3>{a.name}</h3>
-                  <p>{a.title}</p>
-                  <p>{a.email}</p>
-                </div>
-                <Button
-                  disabled={busy}
-                  variant={a.attended ? "default" : "outline"}
-                  onClick={() =>
-                    save({
-                      action: "attendance",
-                      eventId: a.event_id,
-                      userId: a.user_id,
-                      attended: !a.attended,
-                    })
-                  }
-                >
-                  {a.attended ? "Attended ✓" : "Mark attended"}
-                </Button>
-              </section>
-            ))}
-        </>
       )}
       {!loading && tab === "messages" && (
         <>

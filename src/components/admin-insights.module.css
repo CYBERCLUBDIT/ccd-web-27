@@ -228,3 +228,26 @@
     gap: 7px;
   }
 }
+
+.visitorChart {
+  overflow-x: auto;
+  padding-bottom: 12px;
+}
+:global(html.dark) .badge {
+  background: #203553;
+  color: #bad1ff;
+}
+:global(html.dark) .barTrack {
+  background: #1c2e47;
+}
+:global(html.dark) .notice[role="alert"] {
+  background: #38202a;
+  color: #ffb9b3;
+}
+
+.visitorChart > div {
+  min-width: 32px;
+}
+:global(html.dark) .chart strong {
+  color: #a5c7ff;
+}

@@ -409,3 +409,63 @@
 .optional[open] > .field {
   margin-top: 16px;
 }
+
+:global(html.dark) .library {
+  --portal-panel: #101e30;
+  --portal-ink: #edf3ff;
+  --portal-sub: #a5b5cd;
+  --portal-line: #26374d;
+}
+:global(html.dark) .dialog:global([data-slot="dialog-content"]),
+:global(html.dark) .editorLoading {
+  background: #101e30;
+  color: #edf3ff;
+  color-scheme: dark;
+  border-color: #26374d;
+}
+:global(html.dark) .dialog input,
+:global(html.dark) .dialog textarea,
+:global(html.dark) .dialog select {
+  background: #0b1728;
+  color: #edf3ff;
+  border-color: #34465e;
+}
+:global(html.dark) .dialog h2,
+:global(html.dark) .dialog label {
+  color: #edf3ff;
+}
+:global(html.dark) .toolbar nav button[aria-pressed="true"] {
+  background: #203b60;
+  color: #c2d7ff;
+}
+
+:global(html.dark)
+  .dialog
+  :global([data-slot="button"][data-variant="outline"]),
+:global(html.dark) .dialog :global([data-slot="button"][data-variant="ghost"]) {
+  background: #17283e;
+  color: #d3e2ff;
+  border-color: #34465e;
+}
+:global(html.dark) .preview {
+  color: #b7c6dc;
+}
+:global(html.dark) .notice {
+  background: #17372c;
+  color: #bcebd3;
+}
+:global(html.dark) .error {
+  background: #38202a;
+  color: #ffb9b3;
+}
+:global(html.dark) .published {
+  background: #17372c;
+  color: #bcebd3;
+}
+:global(html.dark) .draft {
+  background: #3b321b;
+  color: #f0d499;
+}
+:global(html.dark) .tableWrap th {
+  background: #14243a;
+}

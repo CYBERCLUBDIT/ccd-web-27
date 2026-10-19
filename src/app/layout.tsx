@@ -1,3 +1,4 @@
+import { VisitorTracker } from "@/components/visitor-tracker";
 import type { Metadata } from "next";
 import { Figtree, Space_Grotesk, Outfit } from "next/font/google";
 import "./globals.css";
@@ -46,6 +47,7 @@ export default function RootLayout({
         </a>
         {children}
         <BackToTop />
+        <VisitorTracker />
       </body>
     </html>
   );
