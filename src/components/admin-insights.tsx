@@ -9,6 +9,7 @@ import {
   RefreshCw,
 } from "lucide-react";
 import { Button } from "./ui/button";
+import { LoadingFeedback } from "./loading-feedback";
 import styles from "./admin-insights.module.css";
 type Audit = {
   id: string;
@@ -40,6 +41,7 @@ const actionLabels: Record<string, string> = {
   approve: "Member approved",
   reject: "Member rejected",
   "content.create": "Content created",
+  "content.update": "Content edited",
   "content.publish": "Content published",
   "content.unpublish": "Content unpublished",
   "attendance.present": "Attendance marked present",
@@ -131,9 +133,10 @@ export function AdminInsights({
         </p>
       )}
       {loading && (
-        <p role="status" className={styles.notice}>
-          Loading {view === "audit" ? "activity" : "analytics"}…
-        </p>
+        <LoadingFeedback
+          compact
+          label={view === "audit" ? "Loading activity" : "Loading analytics"}
+        />
       )}
       {view === "audit" ? (
         <section className={styles.panel} aria-busy={loading}>

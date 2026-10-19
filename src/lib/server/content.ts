@@ -25,3 +25,10 @@ export async function statistics() {
   }
   return totals;
 }
+
+export async function workspaceContent() {
+  const { rows } = await db.query(
+    "SELECT id,kind,title,description,CASE WHEN kind='resource' THEN body ELSE '' END AS body,category,image_url,external_url,event_date,location,published FROM content WHERE published AND kind IN('event','news','resource','challenge') ORDER BY event_date ASC NULLS LAST,created_at DESC",
+  );
+  return rows;
+}

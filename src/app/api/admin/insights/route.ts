@@ -7,6 +7,7 @@ const actions = [
   "approve",
   "reject",
   "content.create",
+  "content.update",
   "content.publish",
   "content.unpublish",
   "attendance.present",

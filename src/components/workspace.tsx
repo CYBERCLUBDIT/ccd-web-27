@@ -1,11 +1,8 @@
 "use client";
 import Link from "next/link";
-import { useEffect, useState, useId } from "react";
-import { useRouter } from "next/navigation";
+import { useEffect, useState } from "react";
+import { useRouter, usePathname } from "next/navigation";
 import { Button } from "./ui/button";
-import { Input } from "./ui/input";
-import { Label } from "./ui/label";
-import { Textarea } from "./ui/textarea";
 import { Logo } from "./shared";
 import {
   BarChart3,
@@ -25,14 +22,25 @@ import {
   Menu,
   X,
   ArrowUpRight,
-  ShieldCheck,
   ChevronRight,
 } from "lucide-react";
 import { type ClubUser, type ClubContent, formatDate } from "@/lib/models";
-import { LearningHub } from "./learning-hub";
+import dynamic from "next/dynamic";
+import { LoadingFeedback } from "./loading-feedback";
 import { learningLabs } from "@/lib/learning-labs";
 import styles from "./workspace.module.css";
-import { AdminInsights } from "./admin-insights";
+const LearningHub = dynamic(
+  () => import("./learning-hub").then((m) => m.LearningHub),
+  { loading: () => <LoadingFeedback label="Opening Learning" /> },
+);
+const AdminInsights = dynamic(
+  () => import("./admin-insights").then((m) => m.AdminInsights),
+  { loading: () => <LoadingFeedback label="Opening report" /> },
+);
+const AdminContent = dynamic(
+  () => import("./admin-content").then((m) => m.AdminContent),
+  { loading: () => <LoadingFeedback label="Opening content library" /> },
+);
 type Applicant = ClubUser & { created_at: string };
 type Entry = {
   event_id: string;
@@ -54,6 +62,7 @@ export function Workspace({
   initialTab?: string;
 }) {
   const router = useRouter();
+  const pathname = usePathname();
   const [active, setActive] = useState(initialTab),
     [search, setSearch] = useState(""),
     [mobile, setMobile] = useState(false);
@@ -71,14 +80,17 @@ export function Workspace({
     };
   }, [mobile]);
   useEffect(() => {
-    setActive(initialTab);
-  }, [initialTab]);
+    if (admin) setActive(pathname.split("/")[2] || "overview");
+  }, [pathname, admin]);
   const navigate = (value: string) => {
     setActive(value);
-    if (admin)
-      router.replace(value === "overview" ? "/admin" : "/admin/" + value, {
-        scroll: false,
-      });
+    if (active !== value) window.scrollTo({ top: 0, behavior: "instant" });
+    if (admin && active !== value)
+      window.history.pushState(
+        null,
+        "",
+        value === "overview" ? "/admin" : "/admin/" + value,
+      );
   };
   const nav = admin
     ? [
@@ -236,7 +248,7 @@ export function Workspace({
             <strong>{nav.find((n) => n.id === active)?.label}</strong>
           </div>
           <div>
-            {active !== "analytics" && (
+            {(!admin || !["analytics", "overview"].includes(active)) && (
               <label className="portal-search">
                 <Search size={15} />
                 <input
@@ -260,8 +272,18 @@ export function Workspace({
                 view={active}
                 search={search}
               />
+            ) : active === "content" ? (
+              <AdminContent
+                search={search}
+                onClearSearch={() => setSearch("")}
+              />
             ) : (
-              <AdminPortal tab={active} setTab={navigate} search={search} />
+              <AdminPortal
+                key={active}
+                tab={active}
+                setTab={navigate}
+                search={search}
+              />
             )
           ) : (
             <>
@@ -546,32 +568,6 @@ function ContentCollection({
     </div>
   );
 }
-function SummaryCard({
-  label,
-  value,
-  detail,
-  accent = false,
-  icon: Icon,
-}: {
-  label: string;
-  value: string;
-  detail: string;
-  accent?: boolean;
-  icon: typeof Users;
-}) {
-  return (
-    <section className={`portal-summary${accent ? " accent" : ""}`}>
-      <div>
-        <span className="portal-summary-icon">
-          <Icon size={19} />
-        </span>
-        <span>{label}</span>
-      </div>
-      <strong>{value}</strong>
-      <p>{detail || "—"}</p>
-    </section>
-  );
-}
 function PortalEmpty({ text }: { text: string }) {
   return (
     <div className="portal-empty">
@@ -656,20 +652,29 @@ function AdminPortal({
     [busy, setBusy] = useState(false),
     [loading, setLoading] = useState(true),
     [memberStatus, setMemberStatus] = useState("all");
-  async function load() {
-    const r = await fetch("/api/admin", { cache: "no-store" });
+  async function load(signal?: AbortSignal) {
+    const r = await fetch("/api/admin?view=" + tab, {
+      cache: "no-store",
+      signal,
+    });
     const d = await r.json();
     if (!r.ok) throw new Error(d.error);
-    setMembers(d.members);
-    setContent(d.content);
-    setAttendance(d.attendance);
-    setMessages(d.messages);
+    setMembers(d.members ?? []);
+    setContent(d.content ?? []);
+    setAttendance(d.attendance ?? []);
+    setMessages(d.messages ?? []);
   }
   useEffect(() => {
-    load()
-      .catch((e) => setError(e.message))
-      .finally(() => setLoading(false));
-  }, []);
+    const controller = new AbortController();
+    load(controller.signal)
+      .catch((e) => {
+        if (!controller.signal.aborted) setError(e.message);
+      })
+      .finally(() => {
+        if (!controller.signal.aborted) setLoading(false);
+      });
+    return () => controller.abort();
+  }, [tab]);
   async function save(data: Record<string, unknown>) {
     setBusy(true);
     setError("");
@@ -703,7 +708,7 @@ function AdminPortal({
           </h1>
           <p>
             {tab === "overview"
-              ? "Membership, events, and club operations at a glance."
+              ? "What needs your attention today."
               : "Manage your club’s " + tab + "."}
           </p>
         </div>
@@ -715,112 +720,112 @@ function AdminPortal({
           Refresh
         </Button>
       </div>
-      {loading && (
-        <p role="status" className={styles.loading}>
-          Loading club activity…
-        </p>
-      )}
-      {tab === "overview" && (
-        <div className="admin-overview">
-          <div className="portal-summary-grid">
-            <SummaryCard
-              label="Pending applications"
-              value={String(
-                members.filter((m) => m.status === "pending").length,
-              )}
-              detail="Awaiting your review"
-              accent
-              icon={Users}
-            />
-            <SummaryCard
-              label="Approved members"
-              value={String(
-                members.filter((m) => m.status === "approved").length,
-              )}
-              detail="Registered on this platform"
-              icon={ShieldCheck}
-            />
-            <SummaryCard
-              label="Published events"
-              value={String(
-                content.filter((c) => c.kind === "event" && c.published).length,
-              )}
-              detail="On the club calendar"
-              icon={CalendarDays}
-            />
-          </div>
-          <div className="portal-overview-grid">
-            <section className="portal-panel">
-              <div className="portal-panel-heading">
-                <h2>Membership applications</h2>
-                <button onClick={() => setTab("members")}>
-                  Review members <ArrowUpRight size={14} />
-                </button>
-              </div>
-              <MembershipChart members={members} />
-            </section>
-            <section className="portal-panel">
-              <div className="portal-panel-heading">
-                <h2>Manage the club</h2>
-              </div>
-              <div className="portal-quick-actions">
-                {[
-                  {
-                    tab: "members",
-                    title: "Review applications",
-                    icon: Users,
-                    detail: `${members.filter((m) => m.status === "pending").length} pending`,
-                  },
-                  {
-                    tab: "content",
-                    title: "Publish club content",
-                    icon: FileText,
-                    detail: `${content.filter((c) => !c.published).length} drafts`,
-                  },
-                  {
-                    tab: "attendance",
-                    title: "Record attendance",
-                    icon: ClipboardCheck,
-                    detail: `${attendance.length} event registrations`,
-                  },
-                  {
-                    tab: "messages",
-                    title: "Read messages",
-                    icon: MessageSquare,
-                    detail: `${messages.length} received`,
-                  },
-                ].map((a) => (
-                  <button key={a.tab} onClick={() => setTab(a.tab)}>
-                    <a.icon size={18} />
-                    <span>
-                      <strong>{a.title}</strong>
-                      <small>{a.detail}</small>
-                    </span>
-                    <ChevronRight size={15} />
-                  </button>
-                ))}
-              </div>
-            </section>
-          </div>
-          <section className="portal-panel admin-recent-panel">
+      {loading && <LoadingFeedback label="Loading your desk" />}
+      {!loading && tab === "overview" && (
+        <div className={styles.actionOverview}>
+          <section className={styles.actionWelcome}>
+            <div>
+              <span className={styles.eyebrow}>YOUR DAILY DESK</span>
+              <h2>Keep the club moving.</h2>
+              <p>
+                Review applications, prepare updates, and reply to your
+                community.
+              </p>
+            </div>
+            <Button onClick={() => setTab("content")}>
+              Open content <ArrowUpRight size={16} />
+            </Button>
+          </section>
+          <section className="portal-panel">
             <div className="portal-panel-heading">
-              <h2>Recent applications</h2>
+              <div>
+                <h2>Applications to review</h2>
+                <p className={styles.deskHint}>
+                  Latest five awaiting a decision
+                </p>
+              </div>
               <button onClick={() => setTab("members")}>
-                View all <ArrowUpRight size={14} />
+                Open members <ArrowUpRight size={14} />
               </button>
             </div>
             <ApplicantTable
-              members={members
-                .filter((m) =>
-                  (m.name + " " + m.email + " " + m.registration_number)
-                    .toLowerCase()
-                    .includes(search.toLowerCase()),
-                )
-                .slice(0, 5)}
+              members={members.filter((m) =>
+                (m.name + " " + m.email)
+                  .toLowerCase()
+                  .includes(search.toLowerCase()),
+              )}
               busy={busy}
               save={save}
             />
           </section>
+          <div className={styles.deskGrid}>
+            <section className="portal-panel">
+              <div className="portal-panel-heading">
+                <h2>Drafts to finish</h2>
+                <button onClick={() => setTab("content")}>
+                  Content library <ArrowUpRight size={14} />
+                </button>
+              </div>
+              {content.length ? (
+                content.map((c) => (
+                  <button
+                    className={styles.deskRow}
+                    key={c.id}
+                    onClick={() => setTab("content")}
+                  >
+                    <FileText size={18} />
+                    <span>
+                      <strong>{c.title}</strong>
+                      <small>
+                        {c.kind === "resource" ? "Learning" : c.kind} · Draft
+                      </small>
+                    </span>
+                    <ChevronRight size={15} />
+                  </button>
+                ))
+              ) : (
+                <p className={styles.deskEmpty}>
+                  All caught up. No drafts to finish.
+                </p>
+              )}
+            </section>
+            <section className="portal-panel">
+              <div className="portal-panel-heading">
+                <h2>Recent messages</h2>
+                <button onClick={() => setTab("messages")}>
+                  Open inbox <ArrowUpRight size={14} />
+                </button>
+              </div>
+              {messages.length ? (
+                messages.map((m) => (
+                  <button
+                    className={styles.deskRow}
+                    key={m.id}
+                    onClick={() => setTab("messages")}
+                  >
+                    <MessageSquare size={18} />
+                    <span>
+                      <strong>{m.name}</strong>
+                      <small>{m.message.slice(0, 90)}</small>
+                    </span>
+                    <ChevronRight size={15} />
+                  </button>
+                ))
+              ) : (
+                <p className={styles.deskEmpty}>Your inbox is clear.</p>
+              )}
+            </section>
+          </div>
+          <div className={styles.deskLinks}>
+            <button onClick={() => setTab("attendance")}>
+              <ClipboardCheck size={17} /> Record attendance{" "}
+              <ArrowUpRight size={14} />
+            </button>
+            <button onClick={() => setTab("analytics")}>
+              <BarChart3 size={17} /> View trends in Analytics{" "}
+              <ArrowUpRight size={14} />
+            </button>
+          </div>
         </div>
       )}
       {error && (
@@ -829,7 +834,7 @@ function AdminPortal({
         </p>
       )}
       {notice && <p role="status">{notice}</p>}
-      {tab === "members" && (
+      {!loading && tab === "members" && (
         <section className="portal-panel">
           <div className="portal-panel-heading">
             <h2>Member applications</h2>
@@ -869,106 +874,7 @@ function AdminPortal({
           />
         </section>
       )}
-      {tab === "content" && (
-        <div className="admin-content-grid">
-          <form
-            className="form-stack student-dashboard-card"
-            onSubmit={async (e) => {
-              e.preventDefault();
-              const form = e.currentTarget;
-              const data = Object.fromEntries(new FormData(form));
-              if (
-                await save({
-                  ...data,
-                  action: "content",
-                  published: data.published === "on",
-                  event_date: data.event_date
-                    ? new Date(String(data.event_date)).toISOString()
-                    : undefined,
-                })
-              )
-                form.reset();
-            }}
-          >
-            <h2>Publish real club content</h2>
-            <Label htmlFor="kind">Type</Label>
-            <select name="kind" id="kind" className="real-select">
-              {[
-                "event",
-                "news",
-                "resource",
-                "gallery",
-                "challenge",
-                "leader",
-                "testimonial",
-              ].map((k) => (
-                <option key={k}>{k}</option>
-              ))}
-            </select>
-            <Label htmlFor="title">Title / name</Label>
-            <Input
-              name="title"
-              id="title"
-              required
-              minLength={3}
-              maxLength={200}
-            />
-            <Label htmlFor="description">Description</Label>
-            <Textarea name="description" id="description" maxLength={2000} />
-            <Label htmlFor="body">Full text</Label>
-            <Textarea name="body" id="body" maxLength={20000} />
-            <Label htmlFor="category">Category / role</Label>
-            <Input
-              name="category"
-              id="category"
-              placeholder="For events: Workshop or CTF"
-            />
-            <Label htmlFor="event_date">Date and time (events)</Label>
-            <Input name="event_date" id="event_date" type="datetime-local" />
-            <Label htmlFor="location">Location</Label>
-            <Input name="location" id="location" />
-            <Label htmlFor="image_url">Official image HTTPS URL</Label>
-            <Input name="image_url" id="image_url" type="url" />
-            <Label htmlFor="external_url">Resource / challenge HTTPS URL</Label>
-            <Input name="external_url" id="external_url" type="url" />
-            <label>
-              <input name="published" type="checkbox" /> Publish now
-            </label>
-            <Button disabled={busy}>Save content</Button>
-          </form>
-          <div>
-            {content.length === 0 && <p>No content has been added.</p>}
-            {content
-              .filter((c) =>
-                (c.title + " " + c.kind)
-                  .toLowerCase()
-                  .includes(search.toLowerCase()),
-              )
-              .map((c) => (
-                <section key={c.id} className="student-dashboard-card">
-                  <span>
-                    {c.kind} · {c.published ? "Published" : "Draft"}
-                  </span>
-                  <h3>{c.title}</h3>
-                  <Button
-                    disabled={busy}
-                    variant="outline"
-                    onClick={() =>
-                      save({
-                        action: "publish",
-                        id: c.id,
-                        published: !c.published,
-                      })
-                    }
-                  >
-                    {c.published ? "Unpublish" : "Publish"}
-                  </Button>
-                </section>
-              ))}
-          </div>
-        </div>
-      )}
-      {tab === "attendance" && (
+      {!loading && tab === "attendance" && (
         <>
           {attendance.length === 0 && (
             <p className="live-empty">Event registrations will appear here.</p>
@@ -1007,7 +913,7 @@ function AdminPortal({
             ))}
         </>
       )}
-      {tab === "messages" && (
+      {!loading && tab === "messages" && (
         <>
           {messages.length === 0 && (
             <p className="live-empty">No messages received.</p>
@@ -1093,110 +999,6 @@ function ApplicantTable({
       </table>
     </div>
   ) : (
-    <PortalEmpty text="No matching membership applications." />
-  );
-}
-function MembershipChart({ members }: { members: Applicant[] }) {
-  const gradientId = useId();
-  const now = new Date();
-  const months = Array.from({ length: 6 }, (_, i) => {
-    const date = new Date(now.getFullYear(), now.getMonth() - 5 + i, 1);
-    return {
-      label: date.toLocaleDateString("en-GB", { month: "short" }),
-      count: members.filter((m) => {
-        const d = new Date(m.created_at);
-        return (
-          d.getFullYear() === date.getFullYear() &&
-          d.getMonth() === date.getMonth()
-        );
-      }).length,
-    };
-  });
-  const max = Math.max(1, ...months.map((m) => m.count));
-  const points = months.map((month, i) => ({
-    x: 28 + i * 108,
-    y: 166 - (month.count / max) * 130,
-  }));
-  const path = points.reduce((line, point, i) => {
-    if (i === 0) return `M ${point.x} ${point.y}`;
-    const previous = points[i - 1];
-    const middle = (previous.x + point.x) / 2;
-    return `${line} C ${middle} ${previous.y}, ${middle} ${point.y}, ${point.x} ${point.y}`;
-  }, "");
-  const area = `${path} L ${points[5].x} 166 L ${points[0].x} 166 Z`;
-  return (
-    <>
-      <div className="portal-chart-total">
-        <strong>{months.reduce((sum, m) => sum + m.count, 0)}</strong>
-        <span>Applications · last 6 months</span>
-      </div>
-      <div className="portal-line-chart">
-        <svg
-          viewBox="0 0 596 206"
-          role="img"
-          aria-label={months
-            .map((m) => `${m.label}: ${m.count} applications`)
-            .join(", ")}
-        >
-          <defs>
-            <linearGradient id={gradientId} x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0%" stopColor="#4b8be4" stopOpacity=".25" />
-              <stop offset="100%" stopColor="#4b8be4" stopOpacity=".02" />
-            </linearGradient>
-          </defs>
-          {[36, 101, 166].map((y) => (
-            <line
-              key={y}
-              x1="28"
-              x2="568"
-              y1={y}
-              y2={y}
-              className="portal-line-grid"
-            />
-          ))}
-          <path d={area} fill={`url(#${gradientId})`} />
-          <path
-            d={path}
-            fill="none"
-            stroke="#4b8be4"
-            strokeWidth="3"
-            strokeLinecap="round"
-            vectorEffect="non-scaling-stroke"
-          />
-          {points.map((point, i) => (
-            <g key={months[i].label}>
-              <circle
-                cx={point.x}
-                cy={point.y}
-                r="4"
-                fill="var(--portal-panel)"
-                stroke="#4b8be4"
-                strokeWidth="2"
-              >
-                <title>
-                  {months[i].label}: {months[i].count} applications
-                </title>
-              </circle>
-              <text
-                x={point.x}
-                y={point.y - 13}
-                textAnchor="middle"
-                className="portal-line-value"
-              >
-                {months[i].count}
-              </text>
-              <text
-                x={point.x}
-                y="197"
-                textAnchor="middle"
-                className="portal-line-month"
-              >
-                {months[i].label}
-              </text>
-            </g>
-          ))}
-        </svg>
-      </div>
-    </>
+    <PortalEmpty text="No applications need your attention here." />
   );
 }

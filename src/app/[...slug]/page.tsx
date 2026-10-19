@@ -4,7 +4,7 @@ import { PublicPage } from "@/components/public-pages";
 import { AuthPage } from "@/components/auth";
 import { Workspace } from "@/components/workspace";
 import { currentUser } from "@/lib/server/auth";
-import { published } from "@/lib/server/content";
+import { published, workspaceContent } from "@/lib/server/content";
 import { type ClubContent } from "@/lib/models";
 import { supabaseAuthEnabled } from "@/lib/server/supabase";
 type Props = { params: Promise<{ slug: string[] }> };
@@ -91,7 +91,7 @@ export default async function Page({ params }: Props) {
     return (
       <Workspace
         user={user}
-        content={(await published()) as ClubContent[]}
+        content={admin ? [] : ((await workspaceContent()) as ClubContent[])}
         admin={admin}
         initialTab={second ?? "overview"}
       />

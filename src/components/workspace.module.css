@@ -490,3 +490,98 @@
     margin-left: 39px;
   }
 }
+.actionOverview {
+  display: grid;
+  gap: 24px;
+}
+.actionWelcome {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 24px;
+  padding: 28px;
+  border: 1px solid var(--portal-line);
+  border-radius: 18px;
+  background: linear-gradient(110deg, #eef4ff, #fff);
+}
+.actionWelcome h2 {
+  font-size: 26px;
+  line-height: 1.2;
+  font-weight: 600;
+  letter-spacing: -0.04em;
+  margin: 10px 0;
+}
+.actionWelcome p,
+.deskHint {
+  font-size: 12px;
+  line-height: 1.7;
+  color: var(--portal-sub);
+}
+.deskHint {
+  margin-top: 7px;
+}
+.deskGrid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 22px;
+}
+.deskRow {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  width: 100%;
+  text-align: left;
+  padding: 16px 0;
+  border-top: 1px solid var(--portal-line);
+  cursor: pointer;
+}
+.deskRow > svg {
+  flex-shrink: 0;
+  color: #5a7db0;
+}
+.deskRow > svg:last-child {
+  margin-left: auto;
+}
+.deskRow span {
+  min-width: 0;
+}
+.deskRow strong {
+  display: block;
+  font-size: 13px;
+  font-weight: 500;
+}
+.deskRow small {
+  display: block;
+  font-size: 11px;
+  line-height: 1.6;
+  margin-top: 5px;
+  color: var(--portal-sub);
+  overflow-wrap: anywhere;
+}
+.deskEmpty {
+  padding: 24px 0;
+  font-size: 13px;
+  color: var(--portal-sub);
+}
+.deskLinks {
+  display: flex;
+  gap: 20px;
+  flex-wrap: wrap;
+}
+.deskLinks button {
+  display: inline-flex;
+  gap: 8px;
+  align-items: center;
+  font-size: 12px;
+  color: #3566ad;
+  cursor: pointer;
+}
+@media (max-width: 760px) {
+  .deskGrid {
+    grid-template-columns: 1fr;
+  }
+  .actionWelcome {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+}

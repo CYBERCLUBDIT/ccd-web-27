@@ -1,4 +1,5 @@
 import { requestJson } from "@/lib/server/request";
+import type { QueryResult } from "pg";
 import { NextResponse } from "next/server";
 import { supabaseAuthEnabled } from "@/lib/server/supabase";
 import { db } from "@/lib/server/db";
@@ -26,36 +27,134 @@ async function auditedChange(
     client.release();
   }
 }
-export async function GET() {
+export async function GET(request: Request) {
   const user = await currentUser();
   if (user?.role !== "admin" || user.status !== "approved")
     return NextResponse.json(
       { error: "Administrator access required." },
       { status: 403 },
     );
-  const members = await db.query(
-    "SELECT id,name,email,registration_number,phone,course,status,created_at FROM users WHERE role='member' AND (NOT $1::boolean OR onboarding_completed_at IS NOT NULL) ORDER BY created_at DESC",
-    [supabaseAuthEnabled()],
+  const params = new URL(request.url).searchParams;
+  const view = params.get("view") ?? "all";
+  const headers = { "Cache-Control": "no-store" };
+  const memberSql =
+    "SELECT id,name,email,registration_number,phone,course,status,created_at FROM users WHERE role='member' AND (NOT $1::boolean OR onboarding_completed_at IS NOT NULL)";
+  const contentFields =
+    "id,kind,title,description,category,image_url,external_url,event_date,location,published,created_at";
+  if (view === "content") {
+    const id = params.get("id");
+    if (id) {
+      if (
+        !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(
+          id,
+        )
+      )
+        return NextResponse.json(
+          { error: "Invalid content ID." },
+          { status: 400, headers },
+        );
+      const result = await db.query(
+        "SELECT " + contentFields + ",body FROM content WHERE id=$1",
+        [id],
+      );
+      return NextResponse.json(
+        result.rows[0]
+          ? { item: result.rows[0] }
+          : { error: "Content not found." },
+        { status: result.rows.length ? 200 : 404, headers },
+      );
+    }
+    const kind = params.get("kind") ?? "all",
+      status = params.get("status") ?? "all",
+      search = (params.get("search") ?? "").trim();
+    const rawPage = params.get("page") ?? "1";
+    if (
+      !/^[1-9][0-9]{0,4}$/.test(rawPage) ||
+      ![
+        "all",
+        "event",
+        "news",
+        "resource",
+        "gallery",
+        "challenge",
+        "leader",
+        "testimonial",
+      ].includes(kind) ||
+      !["all", "published", "draft"].includes(status) ||
+      search.length > 160
+    )
+      return NextResponse.json(
+        { error: "Invalid content filter." },
+        { status: 400, headers },
+      );
+    const page = Number(rawPage),
+      pageSize = 12;
+    const where =
+      " WHERE ($1='all' OR kind=$1) AND ($2='all' OR published=($2='published')) AND ($3='' OR title ILIKE '%'||$3||'%' OR description ILIKE '%'||$3||'%' OR category ILIKE '%'||$3||'%')";
+    const [items, total] = await Promise.all([
+      db.query(
+        "SELECT " +
+          contentFields +
+          " FROM content" +
+          where +
+          " ORDER BY created_at DESC,id DESC LIMIT 12 OFFSET $4",
+        [kind, status, search, (page - 1) * pageSize],
+      ),
+      db.query("SELECT count(*)::int AS total FROM content" + where, [
+        kind,
+        status,
+        search,
+      ]),
+    ]);
+    return NextResponse.json(
+      { content: items.rows, total: total.rows[0].total, page, pageSize },
+      { headers },
+    );
+  }
+  if (!["all", "overview", "members", "messages", "attendance"].includes(view))
+    return NextResponse.json(
+      { error: "Unknown admin view." },
+      { status: 400, headers },
+    );
+  const queries: Record<string, () => Promise<QueryResult>> = {
+    members: () =>
+      db.query(
+        memberSql +
+          (view === "overview"
+            ? " AND status='pending' ORDER BY created_at DESC LIMIT 5"
+            : " ORDER BY created_at DESC"),
+        [supabaseAuthEnabled()],
+      ),
+    content: () =>
+      db.query(
+        view === "overview"
+          ? "SELECT " +
+              contentFields +
+              " FROM content WHERE NOT published ORDER BY created_at DESC LIMIT 3"
+          : "SELECT * FROM content ORDER BY created_at DESC",
+      ),
+    messages: () =>
+      db.query(
+        "SELECT id,name,email,message,created_at FROM messages ORDER BY created_at DESC" +
+          (view === "overview" ? " LIMIT 3" : ""),
+      ),
+    attendance: () =>
+      db.query(
+        "SELECT a.*,u.name,u.email,c.title FROM attendance a JOIN users u ON u.id=a.user_id JOIN content c ON c.id=a.event_id ORDER BY a.created_at DESC",
+      ),
+  };
+  const keys =
+    view === "all"
+      ? ["members", "content", "messages", "attendance"]
+      : view === "overview"
+        ? ["members", "content", "messages"]
+        : [view];
+  const data = await Promise.all(
+    keys.map(async (key) => [key, (await queries[key]()).rows]),
   );
-  const content = await db.query(
-    "SELECT * FROM content ORDER BY created_at DESC",
-  );
-  const messages = await db.query(
-    "SELECT * FROM messages ORDER BY created_at DESC",
-  );
-  const attendance = await db.query(
-    "SELECT a.*,u.name,u.email,c.title FROM attendance a JOIN users u ON u.id=a.user_id JOIN content c ON c.id=a.event_id ORDER BY a.created_at DESC",
-  );
-  return NextResponse.json(
-    {
-      members: members.rows,
-      content: content.rows,
-      messages: messages.rows,
-      attendance: attendance.rows,
-    },
-    { headers: { "Cache-Control": "no-store" } },
-  );
+  return NextResponse.json(Object.fromEntries(data), { headers });
 }
+
 export async function POST(request: Request) {
   try {
     await checkOrigin();
@@ -113,13 +212,22 @@ export async function POST(request: Request) {
         contentBody.length > 20000
       )
         throw new Error("Check the content fields.");
-      for (const url of [body.image_url, body.external_url]) {
+      for (const [field, url] of [
+        ["image_url", body.image_url],
+        ["external_url", body.external_url],
+      ]) {
+        if (!url) continue;
+        const value = String(url);
+        if (value.length > 2000)
+          throw new Error("Use a valid image or HTTPS URL.");
         if (
-          url &&
-          (!String(url).startsWith("https://") || String(url).length > 2000)
+          field === "image_url" &&
+          /^\/images\/[a-zA-Z0-9/_-]+\.(webp|png|jpe?g|avif|svg)$/.test(value)
         )
+          continue;
+        if (!value.startsWith("https://"))
           throw new Error("Use a valid HTTPS URL.");
-        if (url) new URL(String(url));
+        new URL(value);
       }
       if (
         kind === "event" &&
@@ -127,24 +235,40 @@ export async function POST(request: Request) {
           !Number.isFinite(Date.parse(String(body.event_date))))
       )
         throw new Error("Choose a valid event date.");
-      await auditedChange(
-        "INSERT INTO content(kind,title,description,body,category,image_url,external_url,event_date,location,published,created_by) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11) RETURNING id",
-        [
-          kind,
-          title,
-          description,
-          contentBody,
-          category,
-          body.image_url || "",
-          body.external_url || "",
-          body.event_date || null,
-          String(body.location ?? "").slice(0, 200),
-          body.published === true,
+      const values = [
+        kind,
+        title,
+        description,
+        contentBody,
+        category,
+        body.image_url || "",
+        body.external_url || "",
+        body.event_date || null,
+        String(body.location ?? "").slice(0, 200),
+        body.published === true,
+      ];
+      if (body.id !== undefined) {
+        if (
+          typeof body.id !== "string" ||
+          !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(
+            body.id,
+          )
+        )
+          throw new Error("Invalid content ID.");
+        await auditedChange(
+          "UPDATE content SET kind=$1,title=$2,description=$3,body=$4,category=$5,image_url=$6,external_url=$7,event_date=$8,location=$9,published=$10 WHERE id=$11 RETURNING id",
+          [...values, body.id],
           user.id,
-        ],
-        user.id,
-        "content.create",
-      );
+          "content.update",
+        );
+      } else {
+        await auditedChange(
+          "INSERT INTO content(kind,title,description,body,category,image_url,external_url,event_date,location,published,created_by) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11) RETURNING id",
+          [...values, user.id],
+          user.id,
+          "content.create",
+        );
+      }
     } else if (body.action === "publish") {
       await auditedChange(
         "UPDATE content SET published=$1 WHERE id=$2 RETURNING id",

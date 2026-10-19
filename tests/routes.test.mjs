@@ -16,6 +16,7 @@ const suffix = randomUUID(),
   adminEmail = `admin-test-${suffix}@example.test`;
 const password = randomBytes(20).toString("hex");
 let contentId;
+const extraContentIds = [];
 async function post(path, data, cookie, validOrigin = true) {
   return fetch(origin + path, {
     method: "POST",
@@ -301,6 +302,174 @@ test("PostgreSQL membership, authentication, approval and publishing", async (t)
         assert.ok(!Object.hasOwn(item, "created_at"));
       }
     });
+    await t.test(
+      "admin sections load only their own bounded data",
+      async () => {
+        const requestView = async (view) => {
+          const r = await fetch(origin + "/api/admin?view=" + view, {
+            headers: { Cookie: adminCookie },
+          });
+          assert.equal(r.status, 200);
+          assert.match(r.headers.get("cache-control"), /no-store/);
+          return r.json();
+        };
+        const desk = await requestView("overview");
+        assert.ok(
+          desk.members.length <= 5 &&
+            desk.members.every((m) => m.status === "pending"),
+        );
+        assert.ok(
+          desk.content.length <= 3 &&
+            desk.content.every(
+              (c) => !c.published && !Object.hasOwn(c, "body"),
+            ),
+        );
+        assert.ok(desk.messages.length <= 3);
+        assert.ok(!Object.hasOwn(desk, "attendance"));
+        assert.deepEqual(Object.keys(await requestView("members")), [
+          "members",
+        ]);
+        assert.deepEqual(Object.keys(await requestView("messages")), [
+          "messages",
+        ]);
+        const heavy = "Detail only: " + "x".repeat(3000);
+        await db.query("UPDATE content SET body=$1 WHERE id=$2", [
+          heavy,
+          contentId,
+        ]);
+        const library = await requestView(
+          "content&kind=event&search=" + encodeURIComponent(suffix),
+        );
+        assert.equal(library.total, 1);
+        assert.equal(library.content[0].id, contentId);
+        assert.ok(!Object.hasOwn(library.content[0], "body"));
+        assert.ok(!Object.hasOwn(library.content[0], "created_by"));
+        const detail = await requestView("content&id=" + contentId);
+        assert.equal(detail.item.body, heavy);
+        for (const query of [
+          "view=unknown",
+          "view=content&kind=invalid",
+          "view=content&page=-1",
+          "view=content&status=invalid",
+          "view=content&id=bad-id",
+        ]) {
+          assert.equal(
+            (
+              await fetch(origin + "/api/admin?" + query, {
+                headers: { Cookie: adminCookie },
+              })
+            ).status,
+            400,
+          );
+        }
+        assert.equal(
+          (
+            await fetch(origin + "/api/admin?view=content&id=" + randomUUID(), {
+              headers: { Cookie: adminCookie },
+            })
+          ).status,
+          404,
+        );
+        assert.equal(
+          (
+            await fetch(origin + "/api/admin?view=content", {
+              headers: { Cookie: studentCookie },
+            })
+          ).status,
+          403,
+        );
+      },
+    );
+    await t.test(
+      "content library paginates and filters drafts without loading bodies",
+      async () => {
+        const prefix = "Pagination-" + suffix;
+        const seeded = await db.query(
+          "INSERT INTO content(kind,title) SELECT 'news',$1||'-'||n FROM generate_series(1,13) AS n RETURNING id",
+          [prefix],
+        );
+        extraContentIds.push(...seeded.rows.map((row) => row.id));
+        const page = async (n) =>
+          (
+            await fetch(
+              origin +
+                "/api/admin?view=content&kind=news&status=draft&search=" +
+                encodeURIComponent(prefix) +
+                "&page=" +
+                n,
+              { headers: { Cookie: adminCookie } },
+            )
+          ).json();
+        const first = await page(1),
+          second = await page(2);
+        assert.equal(first.total, 13);
+        assert.equal(first.content.length, 12);
+        assert.equal(second.content.length, 1);
+        assert.ok(!first.content.some((c) => c.id === second.content[0].id));
+        assert.ok(
+          first.content.every((c) => !c.published && !Object.hasOwn(c, "body")),
+        );
+      },
+    );
+    await t.test(
+      "existing content can be edited without changing its author",
+      async () => {
+        const original = (
+          await db.query("SELECT created_by FROM content WHERE id=$1", [
+            contentId,
+          ])
+        ).rows[0];
+        const fields = {
+          action: "content",
+          id: contentId,
+          kind: "event",
+          title: `Integration event ${suffix}`,
+          description: "Updated summary",
+          body: "Edited full text",
+          category: "Workshop",
+          event_date: "2030-01-01T10:00:00+03:00",
+          published: true,
+          image_url: "/images/summit/7095.webp",
+        };
+        assert.equal(
+          (await post("/api/admin", fields, studentCookie)).status,
+          403,
+        );
+        assert.equal(
+          (await post("/api/admin", fields, adminCookie)).status,
+          200,
+        );
+        const updated = (
+          await db.query(
+            "SELECT body,created_by,image_url FROM content WHERE id=$1",
+            [contentId],
+          )
+        ).rows[0];
+        assert.equal(updated.body, "Edited full text");
+        assert.equal(updated.created_by, original.created_by);
+        assert.equal(updated.image_url, "/images/summit/7095.webp");
+        assert.equal(
+          (
+            await post(
+              "/api/admin",
+              { ...fields, image_url: "/images/../../private.env" },
+              adminCookie,
+            )
+          ).status,
+          400,
+        );
+        assert.equal(
+          (
+            await post(
+              "/api/admin",
+              { ...fields, id: randomUUID() },
+              adminCookie,
+            )
+          ).status,
+          400,
+        );
+      },
+    );
     await t.test("member booking and admin attendance persist", async () => {
       assert.equal(
         (
@@ -543,6 +712,10 @@ test("PostgreSQL membership, authentication, approval and publishing", async (t)
     });
   } finally {
     await db.query("DELETE FROM messages WHERE email=$1", [email]);
+    if (extraContentIds.length)
+      await db.query("DELETE FROM content WHERE id=ANY($1::uuid[])", [
+        extraContentIds,
+      ]);
     if (contentId)
       await db.query("DELETE FROM content WHERE id=$1", [contentId]);
     await db.query(
